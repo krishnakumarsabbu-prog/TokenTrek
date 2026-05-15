@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { Bell, Shield, Cpu, Users, Upload, Download, RefreshCw, Sparkles, CircleCheck as CheckCircle, Circle as XCircle, Clock, ChevronDown, ChevronUp, FileSpreadsheet, TriangleAlert as AlertTriangle, Trash2, Database } from 'lucide-react';
+import { Bell, Shield, Cpu, Users, Upload, Download, RefreshCw, Sparkles, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, FileSpreadsheet, AlertTriangle, Trash2, Database } from 'lucide-react';
 import {
   importData, resetDatabase, generateDemo,
   fetchImportHistory, fetchSchema, getTemplateUrl,

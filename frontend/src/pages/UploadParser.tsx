@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Upload, X, CircleCheck as CheckCircle, CircleAlert as AlertCircle, ChevronDown, ChevronUp, FileSpreadsheet, Eye, EyeOff } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle, ChevronDown, ChevronUp, FileSpreadsheet, Eye, EyeOff } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const ACCEPTED_COLUMNS = new Set([
