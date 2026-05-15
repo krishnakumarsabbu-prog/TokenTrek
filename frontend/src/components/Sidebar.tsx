@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, CirclePlay as PlayCircle, FileText, Settings, Circle as HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, CirclePlay as PlayCircle, FileText, Settings, Circle as HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const NAV_GROUPS = [
@@ -23,6 +23,7 @@ const NAV_GROUPS = [
     label: 'ENTERPRISE',
     items: [
       { icon: Users, label: 'Developers', to: '/developers' },
+      { icon: Zap, label: 'Developer XP', to: '/developer-xp' },
       { icon: GitBranch, label: 'Teams', to: '/teams' },
       { icon: Trophy, label: 'AI League', to: '/league' },
       { icon: ShoppingBag, label: 'Prompt Marketplace', to: '/marketplace' },

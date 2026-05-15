@@ -281,6 +281,91 @@ export function computeRecommendations() {
   });
 }
 
+// ─── Developer XP System ──────────────────────────────────────────────────
+
+const XP_LEVELS = [
+  { name: 'Beginner',     minXp: 0,    maxXp: 999,   color: '#8ba3be', badge: '🌱' },
+  { name: 'Explorer',     minXp: 1000, maxXp: 2999,  color: '#10b981', badge: '🔍' },
+  { name: 'Prompt Ninja', minXp: 3000, maxXp: 5999,  color: '#0078d4', badge: '⚡' },
+  { name: 'Token Master', minXp: 6000, maxXp: 9999,  color: '#d97706', badge: '🔥' },
+  { name: 'AI Champion',  minXp: 10000, maxXp: Infinity, color: '#e07b39', badge: '🏆' },
+];
+
+function getLevel(xp: number) {
+  for (let i = XP_LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= XP_LEVELS[i].minXp) return { ...XP_LEVELS[i], index: i };
+  }
+  return { ...XP_LEVELS[0], index: 0 };
+}
+
+export function computeDeveloperXP() {
+  // Deterministic seeded random to get stable per-developer numbers
+  function seededRand(seed: number, min: number, max: number): number {
+    const x = Math.sin(seed) * 10000;
+    const frac = x - Math.floor(x);
+    return Math.floor(frac * (max - min + 1)) + min;
+  }
+
+  const developerXP = store.developers.map((dev, idx) => {
+    const score = store.developer_scores.find(ds => ds.developer_id === dev.id);
+    const team  = store.teams.find(t => t.id === dev.team_id);
+
+    const seed = dev.id * 137 + 42;
+    // Activity counts derived deterministically from dev index
+    const promptsUsed        = seededRand(seed,       80,  1200);
+    const successfulPrompts  = Math.round(promptsUsed * (seededRand(seed + 1, 70, 98) / 100));
+    const acceptedCodeBlocks = seededRand(seed + 2,   30,   600);
+    const timeSavedHrs       = seededRand(seed + 3,   20,   350);
+    const aiEfficiency       = seededRand(seed + 4,   55,    99);
+
+    // XP calculation
+    const baseXP       = (score?.score ?? 70) * 40;
+    const promptXP     = successfulPrompts * 3;
+    const codeXP       = acceptedCodeBlocks * 8;
+    const efficiencyXP = Math.round(aiEfficiency * 12);
+    const timeXP       = timeSavedHrs * 5;
+    const totalXP      = baseXP + promptXP + codeXP + efficiencyXP + timeXP;
+
+    const level    = getLevel(totalXP);
+    const nextLevel = XP_LEVELS[Math.min(level.index + 1, XP_LEVELS.length - 1)];
+    const xpForNext = nextLevel.minXp;
+    const xpProgress = level.index === XP_LEVELS.length - 1
+      ? 100
+      : Math.round(((totalXP - level.minXp) / (nextLevel.minXp - level.minXp)) * 100);
+
+    // Estimated ROI: time saved * avg hourly dev rate ($120)
+    const estimatedROI = timeSavedHrs * 120;
+
+    // Overall rank among all devs (assigned after sort)
+    return {
+      developer_id:     dev.id,
+      developer:        dev.name,
+      avatar:           dev.avatar,
+      team:             team?.name ?? '',
+      xp:               totalXP,
+      xpProgress:       Math.min(xpProgress, 100),
+      level:            level.name,
+      levelColor:       level.color,
+      levelIndex:       level.index,
+      score:            score?.score ?? 70,
+      trend:            score?.trend ?? 0,
+      aiEfficiency,
+      promptsUsed,
+      successfulPrompts,
+      acceptedCode:     acceptedCodeBlocks,
+      timeSavedHrs,
+      estimatedROI,
+      rank:             0, // filled below
+    };
+  });
+
+  // Sort by XP descending, assign rank
+  developerXP.sort((a, b) => b.xp - a.xp);
+  developerXP.forEach((d, i) => { d.rank = i + 1; });
+
+  return developerXP;
+}
+
 // ─── Full Analytics Report ─────────────────────────────────────────────────
 
 export function computeFullReport() {

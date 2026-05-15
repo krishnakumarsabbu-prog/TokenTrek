@@ -10,6 +10,7 @@ export const fetchModelEfficiency = () => api.get('/analytics/model-efficiency')
 export const fetchAIWaste = () => api.get('/analytics/ai-waste').then(r => r.data);
 export const fetchRecommendations = () => api.get('/analytics/recommendations').then(r => r.data);
 export const fetchFullReport = () => api.get('/analytics/report').then(r => r.data);
+export const fetchDeveloperXP = () => api.get('/analytics/developer-xp').then(r => r.data);
 
 // Additional endpoints for specific tabs
 export const fetchMarketplacePrompts = () => api.get('/analytics/marketplace').then(r => r.data);

@@ -10,11 +10,13 @@ import {
   computeAIWaste,
   computeRecommendations,
   computeFullReport,
+  computeDeveloperXP,
 } from '../analytics';
 
 const router = Router();
 
 router.get('/report', (_req, res) => { res.json(computeFullReport()); });
+router.get('/developer-xp', (_req, res) => { res.json(computeDeveloperXP()); });
 router.get('/totals', (_req, res) => { res.json(computeTotals()); });
 router.get('/daily-usage', (_req, res) => { res.json(computeDailyUsage()); });
 router.get('/platform-usage', (_req, res) => { res.json(computePlatformUsage()); });
