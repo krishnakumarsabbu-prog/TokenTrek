@@ -27,18 +27,96 @@ router.get('/recommendations', (_req, res) => { res.json(computeRecommendations(
 
 router.get('/marketplace', (_req, res) => {
   res.json([
-    { id: 1, title: 'Code Review Assistant', description: 'Comprehensive code review with security, performance, and style checks', category: 'Engineering', author: 'TokenTrek Team', rating: 4.9, uses: 18245, tokens: 1200, price: 0, tags: ['code', 'review', 'security'], verified: true },
-    { id: 2, title: 'Unit Test Generator', description: 'Automatically generate unit tests for any function with edge cases', category: 'Testing', author: 'QA Automation', rating: 4.8, uses: 15672, tokens: 2100, price: 0, tags: ['testing', 'jest', 'automation'], verified: true },
-    { id: 3, title: 'SQL Query Optimizer', description: 'Analyze and optimize slow SQL queries with indexing recommendations', category: 'Database', author: 'Platform Team', rating: 4.7, uses: 12398, tokens: 900, price: 0, tags: ['sql', 'performance', 'database'], verified: true },
-    { id: 4, title: 'API Documentation Writer', description: 'Generate OpenAPI-compliant docs from code with examples', category: 'Documentation', author: 'Backend Team', rating: 4.6, uses: 9876, tokens: 1500, price: 0, tags: ['api', 'docs', 'openapi'], verified: true },
-    { id: 5, title: 'React Component Builder', description: 'Generate accessible, typed React components with Tailwind styling', category: 'Frontend', author: 'Frontend Team', rating: 4.8, uses: 8923, tokens: 1800, price: 0, tags: ['react', 'typescript', 'tailwind'], verified: true },
-    { id: 6, title: 'Security Vulnerability Scanner', description: 'Scan code for OWASP Top 10 vulnerabilities and suggest fixes', category: 'Security', author: 'DevSecOps', rating: 4.9, uses: 7654, tokens: 1100, price: 0, tags: ['security', 'owasp', 'scanning'], verified: true },
-    { id: 7, title: 'Performance Profiler', description: 'Identify bottlenecks and provide optimization recommendations', category: 'Performance', author: 'Platform Team', rating: 4.5, uses: 6789, tokens: 950, price: 0, tags: ['performance', 'optimization', 'profiling'], verified: false },
-    { id: 8, title: 'Git Commit Message Writer', description: 'Generate descriptive, conventional commit messages from diffs', category: 'DevOps', author: 'DevOps Team', rating: 4.7, uses: 11245, tokens: 400, price: 0, tags: ['git', 'commits', 'workflow'], verified: true },
-    { id: 9, title: 'Data Pipeline Builder', description: 'Create ETL pipelines with error handling and monitoring', category: 'Data', author: 'Data Team', rating: 4.6, uses: 4532, tokens: 2400, price: 0, tags: ['etl', 'pipeline', 'data'], verified: false },
-    { id: 10, title: 'Infrastructure as Code Generator', description: 'Generate Terraform/Ansible configs from architecture descriptions', category: 'DevOps', author: 'DevOps Team', rating: 4.8, uses: 5678, tokens: 2800, price: 0, tags: ['terraform', 'iac', 'devops'], verified: true },
-    { id: 11, title: 'Bug Report Analyzer', description: 'Parse bug reports and suggest root causes with fix approaches', category: 'Engineering', author: 'QA Automation', rating: 4.4, uses: 3456, tokens: 700, price: 0, tags: ['debugging', 'analysis', 'qa'], verified: false },
-    { id: 12, title: 'Microservice Scaffolder', description: 'Bootstrap microservices with Docker, health checks, and logging', category: 'Architecture', author: 'Platform Team', rating: 4.7, uses: 2987, tokens: 3200, price: 0, tags: ['microservices', 'docker', 'architecture'], verified: true },
+    {
+      id: 1, title: 'Code Review Assistant',
+      description: 'Comprehensive code review covering security vulnerabilities, performance anti-patterns, and style consistency across any language.',
+      prompt: 'You are a senior software engineer. Review the following code for: 1) Security vulnerabilities (XSS, SQLi, SSRF) 2) Performance issues and N+1 queries 3) Code style and readability 4) Missing error handling 5) Test coverage gaps. Provide actionable suggestions with code examples.\n\nCode:\n{{code}}',
+      category: 'Engineering', author: 'TokenTrek Team', rating: 4.9, uses: 18245, tokens: 1200, successRate: 94, tags: ['code', 'review', 'security'], verified: true,
+    },
+    {
+      id: 2, title: 'Unit Test Generator',
+      description: 'Automatically generate comprehensive unit tests with edge cases, mocks, and assertions for any function or class.',
+      prompt: 'Generate complete unit tests for the following function using {{framework}}. Include: happy path, edge cases (null, empty, boundary values), error scenarios, and mock any external dependencies. Use descriptive test names following "should_when_given" pattern.\n\nFunction:\n{{function}}',
+      category: 'Testing', author: 'QA Automation', rating: 4.8, uses: 15672, tokens: 2100, successRate: 91, tags: ['testing', 'jest', 'automation'], verified: true,
+    },
+    {
+      id: 3, title: 'SQL Query Optimizer',
+      description: 'Analyze slow SQL queries and return optimized versions with indexing recommendations and execution plan insights.',
+      prompt: 'Analyze this SQL query for performance issues. Provide: 1) Identified bottlenecks 2) Optimized query with explanation 3) Recommended indexes with CREATE INDEX statements 4) Estimated improvement percentage. Database: {{database}}\n\nQuery:\n{{query}}',
+      category: 'Database', author: 'Platform Team', rating: 4.7, uses: 12398, tokens: 900, successRate: 89, tags: ['sql', 'performance', 'database'], verified: true,
+    },
+    {
+      id: 4, title: 'API Documentation Writer',
+      description: 'Generate OpenAPI 3.0-compliant documentation from endpoint code with request/response examples and error schemas.',
+      prompt: 'Generate OpenAPI 3.0 documentation for the following API endpoint. Include: summary, description, request body schema with examples, all response schemas (200, 400, 401, 404, 500), and curl example. Output valid YAML.\n\nEndpoint code:\n{{code}}',
+      category: 'Documentation', author: 'Backend Team', rating: 4.6, uses: 9876, tokens: 1500, successRate: 96, tags: ['api', 'docs', 'openapi'], verified: true,
+    },
+    {
+      id: 5, title: 'React Component Builder',
+      description: 'Generate accessible, fully-typed React components with Tailwind styling, props interface, and Storybook story.',
+      prompt: 'Create a production-ready React component for {{component_description}}. Requirements: TypeScript with explicit prop types, Tailwind CSS styling, accessibility (ARIA labels, keyboard nav), responsive design, and a Storybook story with multiple variants. Export the component and its types.',
+      category: 'Frontend', author: 'Frontend Team', rating: 4.8, uses: 8923, tokens: 1800, successRate: 88, tags: ['react', 'typescript', 'tailwind'], verified: true,
+    },
+    {
+      id: 6, title: 'Security Vulnerability Scanner',
+      description: 'Scan code for OWASP Top 10 vulnerabilities and get prioritized remediation steps with secure code alternatives.',
+      prompt: 'Perform a security audit of this code against OWASP Top 10. For each vulnerability found: 1) Severity (Critical/High/Medium/Low) 2) Vulnerability type and CVE if applicable 3) Affected line numbers 4) Secure code replacement. Output as structured JSON.\n\nCode:\n{{code}}',
+      category: 'Security', author: 'DevSecOps', rating: 4.9, uses: 7654, tokens: 1100, successRate: 97, tags: ['security', 'owasp', 'scanning'], verified: true,
+    },
+    {
+      id: 7, title: 'Performance Profiler',
+      description: 'Identify application bottlenecks and receive prioritized optimization recommendations with expected impact metrics.',
+      prompt: 'Analyze this performance profile/code for bottlenecks. Identify the top 5 performance issues ranked by impact. For each: describe the issue, root cause, recommended fix with code example, and estimated % improvement. Focus on: algorithmic complexity, memory allocations, I/O blocking, and cache misses.\n\nProfile data:\n{{profile}}',
+      category: 'Performance', author: 'Platform Team', rating: 4.5, uses: 6789, tokens: 950, successRate: 85, tags: ['performance', 'optimization', 'profiling'], verified: false,
+    },
+    {
+      id: 8, title: 'Git Commit Message Writer',
+      description: 'Generate semantic, conventional commit messages from git diffs with scope detection and breaking change flagging.',
+      prompt: 'Write a conventional commit message for this git diff. Follow the format: <type>(<scope>): <description>. Types: feat, fix, docs, style, refactor, perf, test, chore. Add body explaining WHY if non-obvious. Flag BREAKING CHANGE if applicable. Keep subject under 72 chars.\n\nDiff:\n{{diff}}',
+      category: 'DevOps', author: 'DevOps Team', rating: 4.7, uses: 11245, tokens: 400, successRate: 98, tags: ['git', 'commits', 'workflow'], verified: true,
+    },
+    {
+      id: 9, title: 'Data Pipeline Builder',
+      description: 'Design and implement ETL pipelines with retry logic, dead-letter queues, monitoring hooks, and schema validation.',
+      prompt: 'Design an ETL pipeline for: Source: {{source}}, Destination: {{destination}}, Volume: {{volume}} records/day. Include: extraction with pagination, transformation with data validation rules, loading with upsert logic, error handling with DLQ, retry with exponential backoff, and monitoring metrics. Provide Python code using {{framework}}.',
+      category: 'Data', author: 'Data Team', rating: 4.6, uses: 4532, tokens: 2400, successRate: 82, tags: ['etl', 'pipeline', 'data'], verified: false,
+    },
+    {
+      id: 10, title: 'Infrastructure as Code Generator',
+      description: 'Generate production-ready Terraform modules from architecture descriptions with security best practices and tagging.',
+      prompt: 'Generate Terraform HCL for: {{infrastructure_description}}. Requirements: use modules where possible, enable encryption at rest and in transit, add security groups with least-privilege rules, configure CloudWatch alarms, use remote state with S3 backend, and add standard resource tags. Include variables.tf and outputs.tf.',
+      category: 'DevOps', author: 'DevOps Team', rating: 4.8, uses: 5678, tokens: 2800, successRate: 90, tags: ['terraform', 'iac', 'devops'], verified: true,
+    },
+    {
+      id: 11, title: 'Bug Report Analyzer',
+      description: 'Parse bug reports and stack traces to identify root causes, suggest fixes, and generate reproduction steps.',
+      prompt: 'Analyze this bug report and provide: 1) Most likely root cause with confidence % 2) Step-by-step reproduction path 3) Suggested fix with code changes 4) Regression test to prevent recurrence 5) Related areas that might be affected. Format as a structured engineering report.\n\nBug report:\n{{bug_report}}',
+      category: 'Engineering', author: 'QA Automation', rating: 4.4, uses: 3456, tokens: 700, successRate: 79, tags: ['debugging', 'analysis', 'qa'], verified: false,
+    },
+    {
+      id: 12, title: 'Microservice Scaffolder',
+      description: 'Bootstrap production microservices with Docker, health checks, distributed tracing, graceful shutdown, and logging.',
+      prompt: 'Scaffold a {{language}} microservice for {{service_description}}. Include: REST API with OpenAPI spec, Dockerfile with multi-stage build, health/readiness endpoints, structured JSON logging with correlation IDs, Prometheus metrics endpoint, graceful shutdown handler, and docker-compose.yml for local development.',
+      category: 'Architecture', author: 'Platform Team', rating: 4.7, uses: 2987, tokens: 3200, successRate: 87, tags: ['microservices', 'docker', 'architecture'], verified: true,
+    },
+    {
+      id: 13, title: 'Code Migration Assistant',
+      description: 'Migrate codebases between frameworks, languages, or API versions with automated transformation and validation.',
+      prompt: 'Migrate this {{source_framework}} code to {{target_framework}}. For each migrated file: show the complete transformed code, list all breaking changes, highlight any functionality that needs manual review, and provide a migration checklist. Preserve all existing behavior.\n\nSource code:\n{{code}}',
+      category: 'Engineering', author: 'Platform Team', rating: 4.6, uses: 4123, tokens: 2600, successRate: 83, tags: ['migration', 'refactor', 'modernization'], verified: true,
+    },
+    {
+      id: 14, title: 'Database Schema Designer',
+      description: 'Design normalized database schemas with relationships, indexes, constraints, and migration scripts from requirements.',
+      prompt: 'Design a PostgreSQL database schema for: {{requirements}}. Provide: normalized tables (3NF minimum), primary and foreign keys, indexes for expected query patterns, check constraints and defaults, Row Level Security policies, and Flyway/Liquibase migration scripts. Explain key design decisions.',
+      category: 'Database', author: 'Backend Team', rating: 4.8, uses: 6234, tokens: 1700, successRate: 93, tags: ['postgresql', 'schema', 'design'], verified: true,
+    },
+    {
+      id: 15, title: 'Load Testing Script Generator',
+      description: 'Generate k6 or Locust load testing scripts with realistic user flows, ramp-up curves, and pass/fail thresholds.',
+      prompt: 'Write a {{tool}} load test for {{endpoint_description}}. Include: realistic user flows with think time, gradual ramp-up to {{target_vus}} VUs, p95 latency threshold of {{threshold_ms}}ms, error rate threshold < 1%, and a summary report format. Add data parameterization to avoid cache hits.',
+      category: 'Testing', author: 'QA Automation', rating: 4.5, uses: 3890, tokens: 1300, successRate: 88, tags: ['load-testing', 'k6', 'performance'], verified: false,
+    },
   ]);
 });
 
