@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Users, GitBranch, MessageSquare, Cpu, DollarSign, Shield, Trash2, ShoppingBag, Zap, Bell, PlayCircle, FileText, Settings, HelpCircle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, ChartBar as BarChart3, Users, GitBranch, MessageSquare, Cpu, DollarSign, Shield, Trash2, ShoppingBag, Zap, Bell, CirclePlay as PlayCircle, FileText, Settings, Circle as HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const NAV = [
@@ -17,6 +17,7 @@ const NAV = [
   { icon: Bell, label: 'Alerts & Insights', to: '/alerts' },
   { icon: PlayCircle, label: 'Replay Center', to: '/replay' },
   { icon: FileText, label: 'Reports', to: '/reports' },
+  { icon: Upload, label: 'Upload & Parse', to: '/upload' },
   { icon: Settings, label: 'Settings', to: '/settings' },
 ];
 
