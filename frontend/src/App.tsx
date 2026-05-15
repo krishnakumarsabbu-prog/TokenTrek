@@ -12,6 +12,7 @@ import ReplayCenter from './pages/ReplayCenter';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import UploadCenter from './pages/UploadCenter';
+import AILeague from './pages/AILeague';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="upload" element={<UploadCenter />} />
           <Route path="developers" element={<Developers />} />
           <Route path="teams" element={<Teams />} />
+          <Route path="league" element={<AILeague />} />
           <Route path="prompt-analytics" element={<PromptAnalytics />} />
           <Route path="model-analytics" element={<ModelAnalytics />} />
           <Route path="cost-center" element={<CostCenter />} />
