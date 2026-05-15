@@ -202,3 +202,30 @@ body {
 }
 
 .count-up { animation: count-up 0.4s ease-out forwards; }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #edf1f5 25%, #f5f8fb 50%, #edf1f5 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes live-ring {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.live-ring {
+  animation: live-ring 2s ease-out infinite;
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-up { animation: count-up 0.4s ease-out forwards; }
