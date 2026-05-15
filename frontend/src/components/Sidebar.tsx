@@ -1,23 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, Users, GitBranch, MessageSquare, Cpu, DollarSign, Shield, Trash2, ShoppingBag, Zap, Bell, PlayCircle, FileText, Settings, HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, CirclePlay as PlayCircle, FileText, Settings, Circle as HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const NAV = [
   { icon: LayoutDashboard, label: 'Overview', to: '/overview' },
-  { icon: BarChart3, label: 'Dashboards', to: '/dashboards' },
+  { icon: Upload, label: 'Upload Center', to: '/upload' },
   { icon: Users, label: 'Developers', to: '/developers' },
   { icon: GitBranch, label: 'Teams', to: '/teams' },
   { icon: MessageSquare, label: 'Prompt Analytics', to: '/prompt-analytics' },
   { icon: Cpu, label: 'Model Analytics', to: '/model-analytics' },
   { icon: DollarSign, label: 'Cost Center', to: '/cost-center' },
-  { icon: Shield, label: 'Security & Compliance', to: '/security' },
   { icon: Trash2, label: 'AI Waste Detector', to: '/waste' },
   { icon: ShoppingBag, label: 'Prompt Marketplace', to: '/marketplace' },
-  { icon: Zap, label: 'Productivity', to: '/productivity' },
-  { icon: Bell, label: 'Alerts & Insights', to: '/alerts' },
   { icon: PlayCircle, label: 'Replay Center', to: '/replay' },
   { icon: FileText, label: 'Reports', to: '/reports' },
-  { icon: Upload, label: 'Upload & Parse', to: '/upload' },
   { icon: Settings, label: 'Settings', to: '/settings' },
 ];
 

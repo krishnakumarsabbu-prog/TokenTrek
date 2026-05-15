@@ -19,9 +19,13 @@ export interface SchemaInfo {
   [sheet: string]: { required: string[]; optional: string[] };
 }
 
-export async function importData(filename: string, sheets: Record<string, Record<string, unknown>[]>): Promise<ImportResult> {
-  const { data } = await api.post('/data/import', { filename, sheets });
+export async function importData(payload: { filename: string; data: Record<string, any[]> }): Promise<ImportResult> {
+  const { data } = await api.post('/data/import', { filename: payload.filename, sheets: payload.data });
   return data;
+}
+
+export function downloadTemplate(sheet: string): void {
+  window.open(`/api/data/template/${sheet}`, '_blank');
 }
 
 export async function resetDatabase(): Promise<void> {

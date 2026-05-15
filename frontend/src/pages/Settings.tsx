@@ -1,443 +1,420 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Bell, Shield, Cpu, Users, Upload, Download, RefreshCw, Sparkles, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, FileSpreadsheet, AlertTriangle, Trash2, Database } from 'lucide-react';
-import {
-  importData, resetDatabase, generateDemo,
-  fetchImportHistory, fetchSchema, getTemplateUrl,
-  type ImportRecord, type SchemaInfo, type ImportResult,
-} from '../api/data';
+import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CircleCheck as CheckCircle, Circle as XCircle, ChevronDown, ChevronUp, FileSpreadsheet, TriangleAlert as AlertTriangle, Sparkles, Bell, Shield, Users, Cpu } from 'lucide-react';
+import { importData, resetDatabase, generateDemo, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
+import { SectionCard, Badge, Tabs } from '../components/ui';
 
-const CONFIG_SECTIONS = [
-  { icon: Users,  label: 'General',      items: ['Organization name', 'Timezone', 'Currency', 'Date format'] },
-  { icon: Bell,   label: 'Notifications', items: ['Email alerts', 'Slack integration', 'Cost threshold alerts', 'Weekly digest'] },
-  { icon: Shield, label: 'Security',     items: ['API key management', 'SSO configuration', 'Audit logs', '2FA settings'] },
-  { icon: Cpu,    label: 'Integrations', items: ['GitHub Copilot', 'Cursor', 'Claude API', 'Custom webhooks'] },
+type Tab = 'data' | 'notifications' | 'security' | 'team' | 'models';
+
+const NOTIFICATIONS_CONFIG = [
+  { id: 'budget_alert', label: 'Budget Alerts', description: 'Notify when team exceeds budget threshold', enabled: true },
+  { id: 'waste_detect', label: 'Waste Detection', description: 'Alert on high-severity AI waste events', enabled: true },
+  { id: 'new_developer', label: 'New Developer Activity', description: 'Notify when a new developer starts using AI tools', enabled: false },
+  { id: 'weekly_report', label: 'Weekly Summary', description: 'Receive weekly analytics digest every Monday', enabled: true },
+  { id: 'security_alert', label: 'Security Alerts', description: 'Immediate notification on potential PII exposure', enabled: true },
+  { id: 'model_change', label: 'Model Version Changes', description: 'Notify when AI model versions are updated', enabled: false },
 ];
 
-const SHEET_NAMES = ['daily_stats', 'developers', 'teams', 'prompts', 'model_costs'];
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function StatusBadge({ status }: { status: 'success' | 'error' }) {
-  return status === 'success' ? (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-      <CheckCircle size={11} /> Success
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full">
-      <XCircle size={11} /> Error
-    </span>
-  );
-}
-
-function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="mb-4">
-      <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-      <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
-    </div>
-  );
-}
+const BUDGET_SETTINGS = [
+  { team: 'Platform Team', budget: 60000, alert_pct: 85 },
+  { team: 'Backend Team', budget: 50000, alert_pct: 90 },
+  { team: 'Frontend Team', budget: 35000, alert_pct: 80 },
+  { team: 'DevOps Team', budget: 30000, alert_pct: 85 },
+  { team: 'QA Automation', budget: 22000, alert_pct: 90 },
+];
 
 export default function Settings() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<ImportResult | null>(null);
-  const [history, setHistory] = useState<ImportRecord[]>([]);
-  const [schema, setSchema] = useState<SchemaInfo>({});
-  const [expandedRecord, setExpandedRecord] = useState<number | null>(null);
-  const [resetting, setResetting] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [actionMsg, setActionMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [schemaOpen, setSchemaOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>('data');
+  const [dragOver, setDragOver] = useState(false);
+  const [parseResult, setParseResult] = useState<any>(null);
+  const [expandedErrors, setExpandedErrors] = useState<Set<number>>(new Set());
+  const [notifications, setNotifications] = useState<Record<string, boolean>>(
+    Object.fromEntries(NOTIFICATIONS_CONFIG.map(n => [n.id, n.enabled]))
+  );
+  const [budgets, setBudgets] = useState(BUDGET_SETTINGS);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
 
-  useEffect(() => {
-    fetchImportHistory().then(setHistory).catch(() => {});
-    fetchSchema().then(setSchema).catch(() => {});
-  }, []);
+  const history = useQuery({ queryKey: ['import-history'], queryFn: fetchImportHistory });
+  const schema = useQuery({ queryKey: ['schema'], queryFn: fetchSchema });
 
-  const refreshHistory = () => fetchImportHistory().then(setHistory).catch(() => {});
+  const importMutation = useMutation({
+    mutationFn: (payload: { filename: string; data: Record<string, any[]> }) => importData(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['import-history'] }),
+  });
 
-  const showMsg = (text: string, ok: boolean) => {
-    setActionMsg({ text, ok });
-    setTimeout(() => setActionMsg(null), 4000);
+  const resetMutation = useMutation({
+    mutationFn: resetDatabase,
+    onSuccess: () => { qc.invalidateQueries(); setParseResult(null); },
+  });
+
+  const demoMutation = useMutation({
+    mutationFn: generateDemo,
+    onSuccess: () => qc.invalidateQueries(),
+  });
+
+  const handleFile = async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target!.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const parsed: Record<string, any[]> = {};
+        wb.SheetNames.forEach(name => {
+          parsed[name] = XLSX.utils.sheet_to_json(wb.Sheets[name]);
+        });
+        setParseResult({ filename: file.name, sheets: Object.keys(parsed), data: parsed, valid: true });
+      } catch {
+        setParseResult({ filename: file.name, valid: false, error: 'Failed to parse file' });
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
-  const parseExcel = useCallback(async (file: File): Promise<Record<string, Record<string, unknown>[]>> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target!.result as ArrayBuffer);
-          const wb = XLSX.read(data, { type: 'array' });
-          const sheets: Record<string, Record<string, unknown>[]> = {};
-          wb.SheetNames.forEach(name => {
-            const ws = wb.Sheets[name];
-            sheets[name] = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
-          });
-          resolve(sheets);
-        } catch (err) { reject(err); }
-      };
-      reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
-    });
-  }, []);
-
-  const parseCSV = useCallback((file: File): Promise<Record<string, Record<string, unknown>[]>> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target!.result as string;
-          const wb = XLSX.read(text, { type: 'string' });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
-          const sheetName = file.name.replace(/\.csv$/i, '').toLowerCase().replace(/[^a-z_]/g, '_');
-          resolve({ [sheetName]: rows });
-        } catch (err) { reject(err); }
-      };
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
-  }, []);
-
-  const handleFile = useCallback(async (file: File) => {
-    const name = file.name.toLowerCase();
-    const isCSV = name.endsWith('.csv');
-    const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
-    if (!isCSV && !isExcel) {
-      showMsg('Unsupported format. Use .xlsx, .xls, or .csv', false);
-      return;
-    }
-    setUploading(true);
-    setUploadResult(null);
-    try {
-      const sheets = isCSV ? await parseCSV(file) : await parseExcel(file);
-      const result = await importData(file.name, sheets);
-      setUploadResult(result);
-      showMsg(result.success ? `Imported ${result.rows} rows successfully` : `Import completed with ${result.errors.length} error(s)`, result.success);
-      refreshHistory();
-    } catch {
-      showMsg('Failed to parse or upload file', false);
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  }, [parseCSV, parseExcel]);
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
-
-  const onDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files?.[0];
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
   };
 
-  const handleReset = async () => {
-    if (!confirm('This will clear all in-memory data. Continue?')) return;
-    setResetting(true);
-    try {
-      await resetDatabase();
-      showMsg('Database reset successfully', true);
-    } catch {
-      showMsg('Reset failed', false);
-    } finally { setResetting(false); }
+  const handleImport = async () => {
+    if (!parseResult?.valid) return;
+    await importMutation.mutateAsync({ filename: parseResult.filename, data: parseResult.data });
+    setParseResult(null);
   };
 
-  const handleGenerateDemo = async () => {
-    setGenerating(true);
-    try {
-      await generateDemo();
-      showMsg('Demo data generated successfully', true);
-    } catch {
-      showMsg('Failed to generate demo data', false);
-    } finally { setGenerating(false); }
+  const toggleError = (id: number) => {
+    setExpandedErrors(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
-
-  const downloadTemplate = (sheet: string) => {
-    const a = document.createElement('a');
-    a.href = getTemplateUrl(sheet);
-    a.download = `${sheet}_template.csv`;
-    a.click();
-  };
-
-  const toggleRecord = (id: number) => setExpandedRecord(v => v === id ? null : id);
 
   return (
-    <div className="p-6 animate-fade-in space-y-6">
-      <div className="mb-1">
-        <h1 className="text-[17px] font-bold text-gray-900">Settings</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Configure your TokenTrek workspace and manage data</p>
+    <div className="flex flex-col h-full min-h-0">
+      <div className="px-6 py-4 border-b border-gray-100 bg-white flex-shrink-0">
+        <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Configure TokenTrek – data, notifications, security & integrations</p>
       </div>
 
-      {actionMsg && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg shadow-lg ${actionMsg.ok ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
-          {actionMsg.ok ? <CheckCircle size={15} /> : <XCircle size={15} />}
-          {actionMsg.text}
-        </div>
-      )}
-
-      {/* Upload + Quick Actions */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 bg-white border border-gray-100 rounded-xl p-5">
-          <SectionHeader title="Upload Excel / CSV" subtitle="Import .xlsx, .xls, or .csv files — each sheet name maps to a data table" />
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all select-none
-              ${dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40'}`}
-          >
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={onFileChange} />
-            {uploading ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-gray-500">Processing file…</span>
-              </div>
-            ) : (
-              <>
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                  <Upload size={20} style={{ color: '#0078d4' }} />
-                </div>
-                <p className="text-sm font-medium text-gray-700">Drop file here or <span style={{ color: '#0078d4' }}>browse</span></p>
-                <p className="text-xs text-gray-400 mt-1">XLSX · XLS · CSV — max 10 MB</p>
-              </>
-            )}
-          </div>
-
-          {uploadResult && (
-            <div className={`mt-3 rounded-lg p-3 text-xs ${uploadResult.success ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'}`}>
-              {uploadResult.success ? (
-                <p className="text-emerald-700 font-medium flex items-center gap-1.5">
-                  <CheckCircle size={13} /> {uploadResult.rows} rows imported successfully
-                </p>
-              ) : (
-                <div>
-                  <p className="text-red-700 font-medium flex items-center gap-1.5 mb-1.5">
-                    <AlertTriangle size={13} /> {uploadResult.errors.length} error(s) — {uploadResult.rows} rows imported
-                  </p>
-                  <ul className="space-y-0.5 pl-4 list-disc text-red-600">
-                    {uploadResult.errors.slice(0, 8).map((e, i) => <li key={i}>{e}</li>)}
-                    {uploadResult.errors.length > 8 && <li>…and {uploadResult.errors.length - 8} more</li>}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col gap-3">
-          <SectionHeader title="Quick Actions" subtitle="Manage in-memory data" />
-
-          <button
-            onClick={handleGenerateDemo}
-            disabled={generating}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 transition-all text-left group disabled:opacity-60"
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 group-hover:bg-blue-100 flex-shrink-0">
-              {generating
-                ? <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                : <Sparkles size={14} style={{ color: '#0078d4' }} />}
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-800">Generate Demo Data</p>
-              <p className="text-[11px] text-gray-400">Re-seed with sample data</p>
-            </div>
-          </button>
-
-          <button
-            onClick={handleReset}
-            disabled={resetting}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50/40 transition-all text-left group disabled:opacity-60"
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 group-hover:bg-red-100 flex-shrink-0">
-              {resetting
-                ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                : <Trash2 size={14} className="text-red-500" />}
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-800">Reset Database</p>
-              <p className="text-[11px] text-gray-400">Clear all in-memory data</p>
-            </div>
-          </button>
-
-          <div className="mt-auto pt-2 border-t border-gray-50">
-            <p className="text-[11px] text-gray-400 flex items-center gap-1.5">
-              <Database size={10} /> In-memory — resets on server restart
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Templates + Schema */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <SectionHeader title="Download Sample Templates" subtitle="CSV templates for each supported data sheet" />
-          <div className="space-y-0">
-            {SHEET_NAMES.map(sheet => (
-              <div key={sheet} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileSpreadsheet size={13} className="text-gray-400 flex-shrink-0" />
-                  <span className="text-xs font-medium text-gray-700">{sheet}</span>
-                  {schema[sheet] && (
-                    <span className="text-[10px] text-gray-400 truncate">
-                      ({schema[sheet].required.join(', ')})
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => downloadTemplate(sheet)}
-                  className="flex items-center gap-1 text-xs font-medium flex-shrink-0 ml-2 hover:underline"
-                  style={{ color: '#0078d4' }}
-                >
-                  <Download size={12} /> CSV
-                </button>
-              </div>
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Tab nav */}
+        <div className="border-b border-gray-100 bg-white px-6 flex-shrink-0">
+          <div className="flex">
+            {[
+              { id: 'data', label: 'Data Management', icon: <Database size={14} /> },
+              { id: 'notifications', label: 'Notifications', icon: <Bell size={14} /> },
+              { id: 'security', label: 'Security', icon: <Shield size={14} /> },
+              { id: 'team', label: 'Team Budgets', icon: <Users size={14} /> },
+              { id: 'models', label: 'AI Models', icon: <Cpu size={14} /> },
+            ].map(t => (
+              <button key={t.id} onClick={() => setTab(t.id as Tab)}
+                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                {t.icon}{t.label}
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-semibold text-gray-800">Schema Validation</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Required and optional columns per sheet</p>
-            </div>
-            <button
-              onClick={() => setSchemaOpen(v => !v)}
-              className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
-            >
-              {schemaOpen ? <><ChevronUp size={12} /> Collapse</> : <><ChevronDown size={12} /> Expand all</>}
-            </button>
-          </div>
-          <div className="space-y-2">
-            {Object.entries(schema).map(([sheet, info]) => {
-              const key = sheet.charCodeAt(0) * 100 + sheet.charCodeAt(1);
-              const open = schemaOpen || expandedRecord === key;
-              return (
-                <div key={sheet} className="border border-gray-100 rounded-lg overflow-hidden">
-                  <button
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                    onClick={() => toggleRecord(key)}
+        <div className="p-6">
+          {tab === 'data' && (
+            <div className="space-y-6 max-w-4xl">
+              {/* Upload */}
+              <SectionCard title="Import Data">
+                <div className="p-5 space-y-4">
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'}`}
                   >
-                    <span className="text-xs font-semibold text-gray-700">{sheet}</span>
-                    {open ? <ChevronUp size={12} className="text-gray-400" /> : <ChevronDown size={12} className="text-gray-400" />}
-                  </button>
-                  {open && (
-                    <div className="px-3 py-2 space-y-1.5">
-                      <div className="flex flex-wrap gap-1">
-                        {info.required.map(col => (
-                          <span key={col} className="text-[11px] font-medium bg-red-50 text-red-600 border border-red-100 px-1.5 py-0.5 rounded">
-                            {col} *
-                          </span>
-                        ))}
-                        {info.optional.map(col => (
-                          <span key={col} className="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                            {col}
-                          </span>
-                        ))}
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                      <Upload size={24} className="text-blue-500" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Drop Excel or CSV file here</p>
+                    <p className="text-xs text-gray-400">Supports .xlsx, .xls, .csv formats</p>
+                    <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+                  </div>
+
+                  {parseResult && (
+                    <div className={`p-4 rounded-xl border ${parseResult.valid ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="flex items-start gap-2.5">
+                        {parseResult.valid
+                          ? <CheckCircle size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                          : <XCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />}
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-800">{parseResult.filename}</p>
+                          {parseResult.valid ? (
+                            <>
+                              <p className="text-xs text-emerald-600 mt-0.5">{parseResult.sheets?.length} sheets found: {parseResult.sheets?.join(', ')}</p>
+                              <button onClick={handleImport} disabled={importMutation.isPending}
+                                className="mt-3 flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-60 transition-colors">
+                                {importMutation.isPending ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}
+                                Import Data
+                              </button>
+                            </>
+                          ) : (
+                            <p className="text-xs text-red-600 mt-0.5">{parseResult.error}</p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[10px] text-gray-400">* required</p>
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+              </SectionCard>
 
-      {/* Import History */}
-      <div className="bg-white border border-gray-100 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-800">Import History</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Recent file imports and their outcomes</p>
-          </div>
-          <button
-            onClick={refreshHistory}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <RefreshCw size={12} /> Refresh
-          </button>
-        </div>
-
-        {history.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <Clock size={28} className="mx-auto mb-2 opacity-40" />
-            <p className="text-xs">No imports yet. Upload a file to get started.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {history.map(record => (
-              <div key={record.id} className="border border-gray-100 rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <FileSpreadsheet size={14} className="text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{record.filename}</p>
-                      <p className="text-[11px] text-gray-400">{formatDate(record.imported_at)} · {record.rows} rows</p>
+              {/* Actions */}
+              <SectionCard title="Data Actions">
+                <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
+                      <Sparkles size={18} className="text-emerald-600" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">Generate Demo Data</p>
+                    <p className="text-xs text-gray-400 mb-3">Populate with realistic sample data for testing</p>
+                    <button onClick={() => demoMutation.mutate()} disabled={demoMutation.isPending}
+                      className="w-full py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5">
+                      {demoMutation.isPending ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                      Generate
+                    </button>
+                  </div>
+                  <div className="p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
+                      <Download size={18} className="text-blue-600" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">Download Templates</p>
+                    <p className="text-xs text-gray-400 mb-3">Get CSV templates for each data sheet</p>
+                    <div className="space-y-1.5">
+                      {['platforms', 'developers', 'daily_stats'].map(sheet => (
+                        <button key={sheet} onClick={() => downloadTemplate(sheet)}
+                          className="w-full py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5">
+                          <FileSpreadsheet size={11} /> {sheet}.csv
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <StatusBadge status={record.status} />
-                    {record.errors.length > 0 && (
-                      <button
-                        onClick={() => toggleRecord(record.id)}
-                        className="text-[11px] text-gray-400 hover:text-gray-600 flex items-center gap-0.5"
-                      >
-                        {record.errors.length} error{record.errors.length !== 1 ? 's' : ''}
-                        {expandedRecord === record.id ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                      </button>
-                    )}
+                  <div className="p-4 border border-red-100 rounded-xl hover:border-red-200 transition-colors bg-red-50/30">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center mb-3">
+                      <Trash2 size={18} className="text-red-500" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">Reset Database</p>
+                    <p className="text-xs text-gray-400 mb-3">Clear all data from the in-memory store</p>
+                    <button onClick={() => { if (confirm('Reset all data? This cannot be undone.')) resetMutation.mutate(); }}
+                      disabled={resetMutation.isPending}
+                      className="w-full py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5">
+                      {resetMutation.isPending ? <RefreshCw size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                      Reset All Data
+                    </button>
                   </div>
                 </div>
-                {expandedRecord === record.id && record.errors.length > 0 && (
-                  <div className="px-4 pb-3 bg-red-50/50 border-t border-red-100">
-                    <ul className="pt-2 space-y-0.5 text-[11px] text-red-600 list-disc pl-4">
-                      {record.errors.map((e, i) => <li key={i}>{e}</li>)}
-                    </ul>
+              </SectionCard>
+
+              {/* Import History */}
+              <SectionCard title="Import History" action={
+                <span className="text-xs text-gray-400">{history.data?.length || 0} imports</span>
+              }>
+                {history.isLoading ? (
+                  <div className="p-4 space-y-3 animate-pulse">{[1, 2, 3].map(i => <div key={i} className="h-10 bg-gray-100 rounded" />)}</div>
+                ) : !history.data?.length ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Database size={28} className="text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-500">No imports yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {history.data.map((record: any) => (
+                      <div key={record.id} className="px-5 py-3.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            {record.status === 'success'
+                              ? <CheckCircle size={15} className="text-emerald-500 flex-shrink-0" />
+                              : <XCircle size={15} className="text-red-400 flex-shrink-0" />}
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">{record.filename}</p>
+                              <p className="text-xs text-gray-400">{record.rows} rows · {new Date(record.imported_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={record.status === 'success' ? 'green' : 'red'}>{record.status}</Badge>
+                            {record.errors?.length > 0 && (
+                              <button onClick={() => toggleError(record.id)} className="text-xs text-red-500 flex items-center gap-0.5">
+                                <AlertTriangle size={11} /> {record.errors.length} errors
+                                {expandedErrors.has(record.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {expandedErrors.has(record.id) && (
+                          <div className="mt-2 p-3 bg-red-50 rounded-lg">
+                            {record.errors.map((err: string, i: number) => (
+                              <p key={i} className="text-xs text-red-600 mb-0.5">· {err}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Workspace Config */}
-      <div>
-        <div className="mb-4">
-          <h2 className="text-sm font-semibold text-gray-800">Workspace Configuration</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Notifications, security, and integrations</p>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {CONFIG_SECTIONS.map(({ icon: Icon, label, items }, i) => (
-            <div key={i} className="bg-white border border-gray-100 rounded-xl p-5">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#e8f4fd' }}>
-                  <Icon size={15} style={{ color: '#0078d4' }} />
-                </div>
-                <span className="text-sm font-semibold text-gray-800">{label}</span>
-              </div>
-              <div className="space-y-0">
-                {items.map((item, j) => (
-                  <div key={j} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
-                    <span className="text-xs text-gray-600">{item}</span>
-                    <button className="text-xs font-medium hover:underline" style={{ color: '#0078d4' }}>Configure</button>
-                  </div>
-                ))}
-              </div>
+              </SectionCard>
             </div>
-          ))}
+          )}
+
+          {tab === 'notifications' && (
+            <div className="max-w-2xl space-y-4">
+              <SectionCard title="Notification Preferences">
+                <div className="divide-y divide-gray-50">
+                  {NOTIFICATIONS_CONFIG.map(item => (
+                    <div key={item.id} className="flex items-center justify-between px-5 py-4">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>
+                      </div>
+                      <button
+                        onClick={() => setNotifications(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                        className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 ${notifications[item.id] ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        style={{ height: 22, width: 42 }}
+                      >
+                        <span className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${notifications[item.id] ? 'translate-x-5' : ''}`}
+                          style={{ width: 18, height: 18, transform: notifications[item.id] ? 'translateX(20px)' : 'translateX(0)' }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+              <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                Save Preferences
+              </button>
+            </div>
+          )}
+
+          {tab === 'security' && (
+            <div className="max-w-2xl space-y-4">
+              <SectionCard title="Security Settings">
+                <div className="p-5 space-y-4">
+                  {[
+                    { label: 'PII Detection', desc: 'Automatically detect and redact personal information in prompts', enabled: true },
+                    { label: 'Audit Logging', desc: 'Log all AI API calls with user identity and timestamp', enabled: true },
+                    { label: 'Data Retention Policy', desc: 'Auto-delete session data after 90 days', enabled: false },
+                    { label: 'API Key Rotation Alerts', desc: 'Notify when API keys are older than 30 days', enabled: true },
+                    { label: 'IP Allowlist', desc: 'Restrict dashboard access to specific IP ranges', enabled: false },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
+                      </div>
+                      <div className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${item.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {item.enabled ? 'Enabled' : 'Disabled'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+              <SectionCard title="API Keys">
+                <div className="p-5 space-y-3">
+                  {[
+                    { name: 'OpenAI API Key', key: 'sk-...•••••••••••••', age: '12 days', status: 'active' },
+                    { name: 'Anthropic API Key', key: 'ant-...•••••••••••••', age: '5 days', status: 'active' },
+                    { name: 'GitHub Copilot Token', key: 'ghp-...•••••••••••••', age: '28 days', status: 'warning' },
+                  ].map((key, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{key.name}</p>
+                        <p className="text-xs font-mono text-gray-400 mt-0.5">{key.key}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400">{key.age} old</span>
+                        <Badge variant={key.status === 'active' ? 'green' : 'yellow'}>{key.status}</Badge>
+                        <button className="text-xs text-blue-600 hover:underline">Rotate</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            </div>
+          )}
+
+          {tab === 'team' && (
+            <div className="max-w-3xl space-y-4">
+              <SectionCard title="Team Budget Configuration">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team</th>
+                        <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Monthly Budget ($)</th>
+                        <th className="text-right px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Alert Threshold (%)</th>
+                        <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {budgets.map((row, i) => (
+                        <tr key={row.team}>
+                          <td className="px-5 py-3.5 text-sm font-medium text-gray-800">{row.team}</td>
+                          <td className="px-5 py-3.5 text-right">
+                            <input type="number" value={row.budget}
+                              onChange={e => setBudgets(prev => prev.map((b, j) => j === i ? { ...b, budget: Number(e.target.value) } : b))}
+                              className="w-24 text-right px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+                          </td>
+                          <td className="px-5 py-3.5 text-right">
+                            <input type="number" min={50} max={100} value={row.alert_pct}
+                              onChange={e => setBudgets(prev => prev.map((b, j) => j === i ? { ...b, alert_pct: Number(e.target.value) } : b))}
+                              className="w-20 text-right px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+                          </td>
+                          <td className="px-5 py-3.5 text-center">
+                            <button className="text-xs text-blue-600 hover:underline font-medium">Save</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </SectionCard>
+            </div>
+          )}
+
+          {tab === 'models' && (
+            <div className="max-w-3xl space-y-4">
+              <SectionCard title="AI Model Configuration">
+                <div className="divide-y divide-gray-50">
+                  {[
+                    { name: 'GPT-4o', provider: 'OpenAI', enabled: true, default_for: 'Complex tasks', cost_per_1k: '$0.005' },
+                    { name: 'Claude 3.5 Sonnet', provider: 'Anthropic', enabled: true, default_for: 'Code review', cost_per_1k: '$0.003' },
+                    { name: 'GPT-4 Turbo', provider: 'OpenAI', enabled: true, default_for: 'Analysis', cost_per_1k: '$0.004' },
+                    { name: 'Claude 3 Haiku', provider: 'Anthropic', enabled: true, default_for: 'Simple tasks', cost_per_1k: '$0.00025' },
+                    { name: 'Gemini 1.5 Pro', provider: 'Google', enabled: false, default_for: 'Long context', cost_per_1k: '$0.0025' },
+                  ].map((model, i) => (
+                    <div key={i} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold"
+                          style={{ background: ['#0078d4', '#e07b39', '#00b4d8', '#f59e0b', '#10b981'][i] }}>
+                          {model.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{model.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-gray-400">{model.provider}</span>
+                            <span className="text-xs text-gray-300">·</span>
+                            <span className="text-xs text-gray-400">Default for: {model.default_for}</span>
+                            <span className="text-xs text-gray-300">·</span>
+                            <span className="text-xs font-mono text-gray-400">{model.cost_per_1k}/1K tokens</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={model.enabled ? 'green' : 'gray'}>{model.enabled ? 'Active' : 'Inactive'}</Badge>
+                        <button className="text-xs text-blue-600 hover:underline">Configure</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            </div>
+          )}
         </div>
       </div>
     </div>
