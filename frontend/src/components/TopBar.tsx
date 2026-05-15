@@ -1,8 +1,10 @@
-import { Calendar, RefreshCw, Bell, Search, ChevronDown } from 'lucide-react';
+import { Calendar, RefreshCw, Bell, Search, ChevronDown, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { useStore } from '../store/useStore';
 
 export default function TopBar() {
   const [refreshing, setRefreshing] = useState(false);
+  const { insightsPanelOpen, toggleInsightsPanel } = useStore();
 
   function handleRefresh() {
     setRefreshing(true);
@@ -54,6 +56,22 @@ export default function TopBar() {
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5eaf0'; e.currentTarget.style.background = 'white'; }}
       >
         <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+      </button>
+
+      {/* AI Insights toggle */}
+      <button
+        onClick={toggleInsightsPanel}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all"
+        style={insightsPanelOpen
+          ? { borderColor: '#0078d4', color: '#0078d4', background: '#eff6ff' }
+          : { borderColor: '#e5eaf0', color: '#4a6480', background: 'white' }
+        }
+        onMouseEnter={e => { if (!insightsPanelOpen) { e.currentTarget.style.borderColor = '#b8c8d8'; e.currentTarget.style.background = '#f7fafd'; } }}
+        onMouseLeave={e => { if (!insightsPanelOpen) { e.currentTarget.style.borderColor = '#e5eaf0'; e.currentTarget.style.background = 'white'; } }}
+        title="AI Insights"
+      >
+        <Sparkles size={13} />
+        AI Insights
       </button>
 
       {/* Notifications */}

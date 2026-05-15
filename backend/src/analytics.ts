@@ -366,6 +366,360 @@ export function computeDeveloperXP() {
   return developerXP;
 }
 
+// ─── AI Insights Panel ────────────────────────────────────────────────────────
+
+export type InsightCategory =
+  | 'recommendation'
+  | 'unusual_usage'
+  | 'cost_anomaly'
+  | 'prompt_opportunity'
+  | 'model_switch'
+  | 'weekly_trend'
+  | 'hidden';
+
+export interface AIInsight {
+  id: string;
+  category: InsightCategory;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  metric?: string;
+  metricLabel?: string;
+  delta?: number;
+  savings?: number;
+  action?: string;
+  tags?: string[];
+}
+
+export function computeAIInsights(): AIInsight[] {
+  const insights: AIInsight[] = [];
+
+  const { totalCost } = computeTotals();
+  const platformUsage = computePlatformUsage();
+  const teamRanking = computeTeamRanking();
+  const modelEff = computeModelEfficiency();
+  const waste = computeAIWaste();
+  const promptRanking = computePromptRanking();
+  const devScores = computeDeveloperScores();
+  const dailyUsage = computeDailyUsage();
+
+  // ── Recommendations ─────────────────────────────────────────────────────────
+
+  // Top-spending team with high growth
+  const topTeam = teamRanking[0];
+  if (topTeam && topTeam.changePct > 15) {
+    const saving = Math.round(topTeam.cost * 0.18);
+    insights.push({
+      id: 'rec-team-minimodel',
+      category: 'recommendation',
+      priority: 'high',
+      title: `${topTeam.team} could save 18% with GPT-4o Mini`,
+      description: `${topTeam.team} is your highest-spending team at $${topTeam.cost.toLocaleString()} (+${topTeam.changePct.toFixed(1)}%). Routing simple tasks to GPT-4o Mini would cut costs significantly.`,
+      metric: `$${saving.toLocaleString()}`,
+      metricLabel: 'potential savings',
+      savings: saving,
+      delta: -18,
+      action: 'Configure model routing policy',
+      tags: ['cost', 'model-routing'],
+    });
+  }
+
+  // Platform with best success scores
+  const cursorPlatform = platformUsage.find(p => p.name === 'Cursor');
+  const githubPlatform = platformUsage.find(p => p.name === 'GitHub Copilot');
+  if (cursorPlatform && githubPlatform) {
+    const cursorDevs = store.developers.filter(d =>
+      store.live_activity.some(la => la.developer_id === d.id && la.platform_id === cursorPlatform.platform_id)
+    );
+    const cursorDevScores = devScores.filter(ds =>
+      cursorDevs.some(cd => cd.name === ds.developer)
+    );
+    const avgCursorScore = cursorDevScores.length
+      ? Math.round(cursorDevScores.reduce((s, d) => s + d.score, 0) / cursorDevScores.length)
+      : 0;
+    if (avgCursorScore > 80) {
+      insights.push({
+        id: 'rec-cursor-success',
+        category: 'recommendation',
+        priority: 'medium',
+        title: 'Cursor users have highest prompt success',
+        description: `Developers using Cursor average a ${avgCursorScore}% productivity score — the highest across all platforms. Consider expanding Cursor licenses to lower-scoring teams.`,
+        metric: `${avgCursorScore}%`,
+        metricLabel: 'avg score',
+        action: 'Expand Cursor to underperforming teams',
+        tags: ['productivity', 'platform'],
+      });
+    }
+  }
+
+  // ── Unusual Usage ───────────────────────────────────────────────────────────
+
+  // Detect repeated prompts
+  const highUsePrompts = promptRanking.filter(p => p.uses > 200);
+  if (highUsePrompts.length > 0) {
+    const topRepeat = highUsePrompts[0];
+    insights.push({
+      id: 'unusual-repeated-prompt',
+      category: 'unusual_usage',
+      priority: 'high',
+      title: `Repeated prompt detected ${topRepeat.uses.toLocaleString()} times`,
+      description: `"${topRepeat.prompt.slice(0, 60)}…" has been used ${topRepeat.uses.toLocaleString()} times. Consolidating into a shared template could save significant tokens.`,
+      metric: topRepeat.uses.toLocaleString(),
+      metricLabel: 'occurrences',
+      savings: Math.round(topRepeat.uses * topRepeat.avgTokens * 0.000002 * 0.4),
+      action: 'Add to Prompt Marketplace',
+      tags: ['prompts', 'efficiency'],
+    });
+  }
+
+  // Weekend usage spike detection
+  const weekendStats = store.daily_stats.filter(s => [0, 6].includes(new Date(s.date).getDay()));
+  const weekdayStats = store.daily_stats.filter(s => ![0, 6].includes(new Date(s.date).getDay()));
+  const avgWeekendCost = weekendStats.length
+    ? weekendStats.reduce((s, r) => s + r.cost, 0) / weekendStats.length
+    : 0;
+  const avgWeekdayCost = weekdayStats.length
+    ? weekdayStats.reduce((s, r) => s + r.cost, 0) / weekdayStats.length
+    : 0;
+  const weekendRatio = avgWeekdayCost > 0 ? (avgWeekendCost / avgWeekdayCost) * 100 : 0;
+  if (weekendRatio > 55) {
+    insights.push({
+      id: 'unusual-weekend-usage',
+      category: 'unusual_usage',
+      priority: 'medium',
+      title: 'High weekend AI usage detected',
+      description: `Weekend usage is ${weekendRatio.toFixed(0)}% of weekday levels — unusually high. This may indicate automated jobs or policy gaps for off-hours usage.`,
+      metric: `${weekendRatio.toFixed(0)}%`,
+      metricLabel: 'of weekday avg',
+      action: 'Review off-hours usage policy',
+      tags: ['usage', 'anomaly'],
+    });
+  }
+
+  // ── Cost Anomalies ──────────────────────────────────────────────────────────
+
+  // Team with biggest cost surge
+  const surgingTeams = teamRanking.filter(t => t.changePct > 25);
+  surgingTeams.slice(0, 2).forEach((t, i) => {
+    const overspend = Math.round(t.cost * (t.changePct / 100));
+    insights.push({
+      id: `cost-surge-${i}`,
+      category: 'cost_anomaly',
+      priority: t.changePct > 35 ? 'critical' : 'high',
+      title: `${t.team} cost up ${t.changePct.toFixed(1)}% this week`,
+      description: `${t.team} spent $${t.cost.toLocaleString()} — $${overspend.toLocaleString()} over the expected baseline. No budget alert was triggered.`,
+      metric: `+$${overspend.toLocaleString()}`,
+      metricLabel: 'over baseline',
+      delta: t.changePct,
+      action: 'Set budget alert for this team',
+      tags: ['cost', 'budget'],
+    });
+  });
+
+  // Low-efficiency model cost anomaly
+  const lowEff = modelEff.filter(m => m.tier === 'low');
+  if (lowEff.length > 0) {
+    const wasteCost = lowEff.reduce((s, m) => s + m.cost, 0);
+    const saving = Math.round(wasteCost * 0.3);
+    insights.push({
+      id: 'cost-model-inefficiency',
+      category: 'cost_anomaly',
+      priority: 'high',
+      title: `${lowEff.length} model(s) showing low cost efficiency`,
+      description: `${lowEff.map(m => m.model).join(', ')} have high cost-per-output ratios. These models cost $${wasteCost.toLocaleString()} in the current period.`,
+      metric: `$${wasteCost.toLocaleString()}`,
+      metricLabel: 'on low-eff models',
+      savings: saving,
+      action: 'Review model allocation rules',
+      tags: ['models', 'cost'],
+    });
+  }
+
+  // ── Top Prompt Opportunities ─────────────────────────────────────────────────
+
+  // Prompts with low success but high usage
+  const lowSuccessHighUse = promptRanking.filter(p => p.successRate < 82 && p.uses > 100);
+  if (lowSuccessHighUse.length > 0) {
+    const top = lowSuccessHighUse[0];
+    insights.push({
+      id: 'prompt-opp-low-success',
+      category: 'prompt_opportunity',
+      priority: 'high',
+      title: `${lowSuccessHighUse.length} high-use prompts have <82% success rate`,
+      description: `"${top.prompt.slice(0, 55)}…" has ${top.uses.toLocaleString()} uses at only ${top.successRate}% success. Improving these prompts reduces retries and saves tokens.`,
+      metric: `${top.successRate}%`,
+      metricLabel: 'success rate',
+      savings: Math.round(totalCost * 0.04),
+      action: 'Open Prompt Analytics',
+      tags: ['prompts', 'quality'],
+    });
+  }
+
+  // High-token prompts that could be condensed
+  const heavyPrompts = promptRanking.filter(p => p.avgTokens > 2500 && p.uses > 50);
+  if (heavyPrompts.length > 0) {
+    const tokenSaving = heavyPrompts.reduce((s, p) => s + p.uses * (p.avgTokens - 1500) * 0.000002, 0);
+    insights.push({
+      id: 'prompt-opp-heavy',
+      category: 'prompt_opportunity',
+      priority: 'medium',
+      title: `${heavyPrompts.length} prompts average >2,500 tokens`,
+      description: `These prompts are token-heavy. Condensing to under 1,500 tokens where possible could save an estimated $${tokenSaving.toFixed(0)} per cycle.`,
+      metric: `${heavyPrompts.length}`,
+      metricLabel: 'heavy prompts',
+      savings: Math.round(tokenSaving),
+      action: 'Review in Prompt Analytics',
+      tags: ['prompts', 'tokens'],
+    });
+  }
+
+  // ── Model Switch Suggestions ─────────────────────────────────────────────────
+
+  // Most expensive model vs cheaper alternative
+  const sortedByCost = [...modelEff].sort((a, b) => b.cost - a.cost);
+  const mostExpensive = sortedByCost[0];
+  if (mostExpensive && totalCost > 0) {
+    const share = ((mostExpensive.cost / totalCost) * 100).toFixed(1);
+    const saving = Math.round(mostExpensive.cost * 0.25);
+    insights.push({
+      id: 'model-switch-expensive',
+      category: 'model_switch',
+      priority: 'high',
+      title: `Switch some ${mostExpensive.model} usage to cheaper model`,
+      description: `${mostExpensive.model} accounts for ${share}% of total costs. Routing non-complex tasks to a cheaper model like GPT-4o Mini or Claude Haiku could save ~25%.`,
+      metric: `$${saving.toLocaleString()}`,
+      metricLabel: 'estimated savings',
+      savings: saving,
+      action: 'Configure model router',
+      tags: ['models', 'cost', 'optimization'],
+    });
+  }
+
+  // High-efficiency models that are underused
+  const highEffModels = modelEff.filter(m => m.tier === 'high' && m.costShare < 10);
+  if (highEffModels.length > 0) {
+    insights.push({
+      id: 'model-switch-underused',
+      category: 'model_switch',
+      priority: 'medium',
+      title: `${highEffModels[0].model} is highly efficient but underused`,
+      description: `${highEffModels[0].model} has the best cost-efficiency score but only ${highEffModels[0].costShare}% cost share. Increasing its usage for routine tasks could reduce overall spend.`,
+      metric: `${highEffModels[0].costShare}%`,
+      metricLabel: 'current usage share',
+      action: 'Increase routing to this model',
+      tags: ['models', 'efficiency'],
+    });
+  }
+
+  // ── Weekly Trends ────────────────────────────────────────────────────────────
+
+  if (dailyUsage.length >= 14) {
+    const lastWeek = dailyUsage.slice(-7);
+    const prevWeek = dailyUsage.slice(-14, -7);
+    const lastCost = lastWeek.reduce((s, d) => s + d.cost, 0);
+    const prevCost = prevWeek.reduce((s, d) => s + d.cost, 0);
+    const lastReq = lastWeek.reduce((s, d) => s + d.requests, 0);
+    const prevReq = prevWeek.reduce((s, d) => s + d.requests, 0);
+    const costChange = prevCost > 0 ? ((lastCost - prevCost) / prevCost) * 100 : 0;
+    const reqChange = prevReq > 0 ? ((lastReq - prevReq) / prevReq) * 100 : 0;
+
+    insights.push({
+      id: 'trend-weekly-cost',
+      category: 'weekly_trend',
+      priority: costChange > 20 ? 'high' : 'medium',
+      title: `Weekly cost ${costChange >= 0 ? 'up' : 'down'} ${Math.abs(costChange).toFixed(1)}%`,
+      description: `Total spend this week: $${lastCost.toLocaleString()} vs $${prevCost.toLocaleString()} last week. ${costChange > 15 ? 'Growth is accelerating — review team budgets.' : 'Spend is relatively stable.'}`,
+      metric: `${costChange >= 0 ? '+' : ''}${costChange.toFixed(1)}%`,
+      metricLabel: 'week-over-week',
+      delta: parseFloat(costChange.toFixed(1)),
+      tags: ['trend', 'cost'],
+    });
+
+    insights.push({
+      id: 'trend-weekly-requests',
+      category: 'weekly_trend',
+      priority: 'low',
+      title: `AI requests ${reqChange >= 0 ? 'grew' : 'dropped'} ${Math.abs(reqChange).toFixed(1)}% WoW`,
+      description: `${lastReq.toLocaleString()} requests this week vs ${prevReq.toLocaleString()} last week. ${reqChange > 20 ? 'Strong adoption growth across the org.' : 'Steady usage pattern.'}`,
+      metric: `${reqChange >= 0 ? '+' : ''}${reqChange.toFixed(1)}%`,
+      metricLabel: 'request growth',
+      delta: parseFloat(reqChange.toFixed(1)),
+      tags: ['trend', 'requests'],
+    });
+  }
+
+  // Developer score trend
+  const topScorers = devScores.slice(0, 3);
+  const lowScorers = devScores.filter(d => d.score < 75);
+  if (lowScorers.length > 0) {
+    insights.push({
+      id: 'trend-low-scores',
+      category: 'weekly_trend',
+      priority: 'medium',
+      title: `${lowScorers.length} developers below 75% productivity score`,
+      description: `${lowScorers.slice(0, 3).map(d => d.developer).join(', ')}${lowScorers.length > 3 ? ` and ${lowScorers.length - 3} more` : ''} are scoring below 75. Targeted coaching could improve team-wide output.`,
+      metric: `${lowScorers.length}`,
+      metricLabel: 'underperforming devs',
+      action: 'View DeveloperXP',
+      tags: ['productivity', 'developers'],
+    });
+  }
+
+  // ── Hidden Insights ──────────────────────────────────────────────────────────
+
+  // Detect platform with no cost growth (potential disengagement)
+  const flatPlatform = platformUsage.find(p => p.costPct < 5);
+  if (flatPlatform) {
+    insights.push({
+      id: 'hidden-flat-platform',
+      category: 'hidden',
+      priority: 'low',
+      title: `${flatPlatform.name} usage is unusually flat`,
+      description: `${flatPlatform.name} accounts for only ${flatPlatform.costPct}% of total spend. This may indicate low adoption or a misconfigured integration worth investigating.`,
+      metric: `${flatPlatform.costPct}%`,
+      metricLabel: 'cost share',
+      action: 'Check platform integration',
+      tags: ['platform', 'adoption'],
+    });
+  }
+
+  // High-waste hidden pattern
+  if (waste.totalEstimatedWasteCost > 5000) {
+    const topWaste = waste.items[0];
+    insights.push({
+      id: 'hidden-waste-pattern',
+      category: 'hidden',
+      priority: 'high',
+      title: `$${waste.totalEstimatedWasteCost.toLocaleString()} in recoverable AI waste`,
+      description: `Top waste driver: "${topWaste.category}" (${topWaste.occurrences} occurrences, ${topWaste.severity} severity). Addressing this alone could recover ~$${Math.round(waste.totalEstimatedWasteCost * 0.7).toLocaleString()}.`,
+      metric: `$${Math.round(waste.totalEstimatedWasteCost * 0.7).toLocaleString()}`,
+      metricLabel: 'recoverable',
+      savings: Math.round(waste.totalEstimatedWasteCost * 0.7),
+      action: 'Open AI Waste Detector',
+      tags: ['waste', 'hidden'],
+    });
+  }
+
+  // Top developer contribution insight
+  if (topScorers.length > 0) {
+    const top = topScorers[0];
+    insights.push({
+      id: 'hidden-top-dev',
+      category: 'hidden',
+      priority: 'low',
+      title: `${top.developer} is your top AI contributor`,
+      description: `${top.developer} (${top.team}) leads with a ${top.score}% productivity score. Their prompt patterns and workflows could be shared org-wide as best practices.`,
+      metric: `${top.score}%`,
+      metricLabel: 'productivity score',
+      action: 'View developer profile',
+      tags: ['productivity', 'best-practice'],
+    });
+  }
+
+  const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  return insights.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+}
+
 // ─── Full Analytics Report ─────────────────────────────────────────────────
 
 export function computeFullReport() {

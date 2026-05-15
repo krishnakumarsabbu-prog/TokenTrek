@@ -2,6 +2,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import AIInsightsPanel from './AIInsightsPanel';
+import { useStore } from '../store/useStore';
 
 const pageVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -28,6 +30,8 @@ function AnimatedOutlet() {
 }
 
 export default function Layout() {
+  const { insightsPanelOpen, setInsightsPanelOpen } = useStore();
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#f0f4f8' }}>
       <Sidebar />
@@ -37,6 +41,7 @@ export default function Layout() {
           <AnimatedOutlet />
         </main>
       </div>
+      <AIInsightsPanel open={insightsPanelOpen} onClose={() => setInsightsPanelOpen(false)} />
     </div>
   );
 }

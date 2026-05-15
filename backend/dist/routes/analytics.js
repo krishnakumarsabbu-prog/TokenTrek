@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const analytics_1 = require("../analytics");
 const router = (0, express_1.Router)();
+router.get('/ai-insights', (_req, res) => { res.json((0, analytics_1.computeAIInsights)()); });
 router.get('/report', (_req, res) => { res.json((0, analytics_1.computeFullReport)()); });
 router.get('/developer-xp', (_req, res) => { res.json((0, analytics_1.computeDeveloperXP)()); });
 router.get('/totals', (_req, res) => { res.json((0, analytics_1.computeTotals)()); });

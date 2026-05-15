@@ -11,10 +11,12 @@ import {
   computeRecommendations,
   computeFullReport,
   computeDeveloperXP,
+  computeAIInsights,
 } from '../analytics';
 
 const router = Router();
 
+router.get('/ai-insights', (_req, res) => { res.json(computeAIInsights()); });
 router.get('/report', (_req, res) => { res.json(computeFullReport()); });
 router.get('/developer-xp', (_req, res) => { res.json(computeDeveloperXP()); });
 router.get('/totals', (_req, res) => { res.json(computeTotals()); });
