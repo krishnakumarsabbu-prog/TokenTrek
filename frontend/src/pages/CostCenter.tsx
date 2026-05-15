@@ -1,5 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert as AlertTriangle } from 'lucide-react';
 
 const costTrend = [
   { date: 'May 12', github: 8200, cursor: 4600, claude: 3200, devin: 2100, tools: 1500 },
