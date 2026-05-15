@@ -2,88 +2,308 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.seed = seed;
 const db_1 = require("./db");
+// ─── helpers ────────────────────────────────────────────────────────────────
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function randFloat(min, max, decimals = 2) {
+    return parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
+}
+function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+function isoOffset(msAgo) {
+    return new Date(Date.now() - msAgo).toISOString();
+}
+// Weighted random: weights must sum to 1
+function weightedPick(items, weights) {
+    const r = Math.random();
+    let acc = 0;
+    for (let i = 0; i < items.length; i++) {
+        acc += weights[i];
+        if (r < acc)
+            return items[i];
+    }
+    return items[items.length - 1];
+}
+// ─── static reference data ───────────────────────────────────────────────────
+const PLATFORMS = [
+    { id: 1, name: 'GitHub Copilot', color: '#0078d4', icon: 'github' },
+    { id: 2, name: 'Cursor', color: '#00b4d8', icon: 'cursor' },
+    { id: 3, name: 'Claude', color: '#e07b39', icon: 'claude' },
+    { id: 4, name: 'Devin', color: '#2563eb', icon: 'devin' },
+    { id: 5, name: 'Custom Tool', color: '#10b981', icon: 'tools' },
+];
+const TEAMS = [
+    { id: 1, name: 'Digital Notification' },
+    { id: 2, name: 'IDPF' },
+    { id: 3, name: 'SIMS' },
+    { id: 4, name: 'CMS' },
+];
+// Core developer list (will be extended to cover 5000 records)
+const CORE_DEVELOPERS = [
+    { baseName: 'Krishna Sabbu', teamId: 1 },
+    { baseName: 'Chandra', teamId: 2 },
+    { baseName: 'Padma', teamId: 3 },
+    { baseName: 'Ramya', teamId: 4 },
+    { baseName: 'Sarath', teamId: 1 },
+];
+const MODELS = [
+    'GPT-4o',
+    'Claude 3.5 Sonnet',
+    'GPT-4 Turbo',
+    'Claude 3 Haiku',
+    'Gemini 1.5 Pro',
+    'GPT-4o Mini',
+    'Claude 3 Opus',
+    'Llama 3.1 70B',
+];
+const MODEL_WEIGHTS = [0.22, 0.20, 0.14, 0.12, 0.10, 0.09, 0.08, 0.05];
+const PROJECTS = [
+    'Auth Service', 'Notification Engine', 'Payment Gateway', 'User Portal',
+    'Report Builder', 'Data Pipeline', 'API Gateway', 'Mobile Backend',
+    'Admin Dashboard', 'Search Service', 'Workflow Automation', 'Compliance Tracker',
+    'Identity Provider', 'Claims Management', 'Document Store', 'Event Bus',
+];
+const PROMPT_TEMPLATES = [
+    'Explain this code snippet in {project}',
+    'Write unit tests for {project} module',
+    'Refactor this function in {project}',
+    'Debug the issue in {project}',
+    'Optimize performance of {project}',
+    'Generate API documentation for {project}',
+    'Review this pull request for {project}',
+    'Fix the failing test in {project}',
+    'Add error handling to {project} service',
+    'Convert this class to TypeScript in {project}',
+    'Create a migration script for {project}',
+    'Implement retry logic for {project}',
+    'Write integration test for {project}',
+    'Summarize these requirements for {project}',
+    'Generate mock data for {project} tests',
+    'Improve logging in {project}',
+    'Add input validation to {project}',
+    'Translate Python to TypeScript for {project}',
+    'Identify security vulnerabilities in {project}',
+    'Create CI/CD pipeline config for {project}',
+];
+const ACTIONS = [
+    'Used GitHub Copilot for autocomplete',
+    'Generated unit tests with Claude',
+    'Refactored service layer using Cursor',
+    'Debugged runtime error with Devin',
+    'Generated boilerplate with Custom Tool',
+    'Code reviewed PR via Claude',
+    'Wrote SQL migration using Copilot',
+    'Resolved merge conflict with Cursor',
+    'Explained complex regex using Claude',
+    'Generated API client with Custom Tool',
+    'Wrote Dockerfile with Copilot',
+    'Fixed TypeScript errors using Devin',
+    'Drafted release notes with Claude',
+    'Scaffolded microservice with Cursor',
+    'Generated test fixtures with Custom Tool',
+];
+const WASTE_CATEGORIES = [
+    { category: 'efficiency', description: 'High token, low success prompts', severity: 'high' },
+    { category: 'redundancy', description: 'Repeated identical prompts', severity: 'medium' },
+    { category: 'cost', description: 'Overused expensive models for simple tasks', severity: 'high' },
+    { category: 'optimization', description: 'Inefficient long prompts', severity: 'low' },
+    { category: 'idle', description: 'Sessions opened but never completed', severity: 'medium' },
+    { category: 'hallucination', 'description': 'Prompts with frequent re-asks', severity: 'high' },
+];
+const INSIGHT_TEMPLATES = [
+    { type: 'cost', title: 'Cost Optimization', icon: 'dollar', description: '{team} is spending {pct}% more than the weekly average.' },
+    { type: 'model', title: 'Model Recommendation', icon: 'sparkles', description: 'Swap GPT-4o for GPT-4o Mini on simple tasks to save ${save}.' },
+    { type: 'prompt', title: 'Prompt Optimization', icon: 'edit', description: 'Consolidating {count} repeated prompts could save {tokens} tokens.' },
+    { type: 'security', title: 'Security Alert', icon: 'shield', description: '{count} prompts may contain sensitive data in {team}.' },
+    { type: 'productivity', title: 'Productivity Boost', icon: 'trending-up', description: 'Developers saved {hours} hours this week using AI tools.' },
+];
+// ─── date helpers ─────────────────────────────────────────────────────────────
+function generateDateRange(days) {
+    const dates = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        dates.push(d.toISOString().split('T')[0]);
+    }
+    return dates;
+}
+// ─── main seed ────────────────────────────────────────────────────────────────
 function seed() {
     if (db_1.store.platforms.length > 0)
         return;
-    const platforms = [
-        { id: 1, name: 'GitHub Copilot', color: '#0078d4', icon: 'github' },
-        { id: 2, name: 'Cursor', color: '#00b4d8', icon: 'cursor' },
-        { id: 3, name: 'Claude', color: '#e07b39', icon: 'claude' },
-        { id: 4, name: 'Devin', color: '#7c3aed', icon: 'devin' },
-        { id: 5, name: 'Custom Tools', color: '#10b981', icon: 'tools' },
+    // ── platforms ──
+    db_1.store.platforms.push(...PLATFORMS);
+    // ── teams ──
+    db_1.store.teams.push(...TEAMS);
+    // ── developers (50 to distribute 5000 records realistically) ──
+    const developerPool = [];
+    // First, add the 5 named developers
+    CORE_DEVELOPERS.forEach((d, i) => {
+        const initials = d.baseName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        developerPool.push({ id: i + 1, name: d.baseName, avatar: initials, team_id: d.teamId });
+    });
+    // Extend to 50 developers cycling through teams for realistic distribution
+    const extraFirstNames = [
+        'Arjun', 'Divya', 'Vikram', 'Pooja', 'Rahul', 'Sneha', 'Aditya', 'Meera',
+        'Kiran', 'Kavya', 'Suresh', 'Lakshmi', 'Ravi', 'Ananya', 'Mohan',
+        'Priya', 'Sanjay', 'Nisha', 'Amit', 'Deepa', 'Gopal', 'Hema',
+        'Ishaan', 'Jyothi', 'Karthik', 'Lalitha', 'Manish', 'Nandita',
+        'Omkar', 'Pavan', 'Qasim', 'Rekha', 'Shiva', 'Tarini', 'Uday',
+        'Vanitha', 'Wasim', 'Xena', 'Yashwant', 'Zara', 'Balaji', 'Chitra',
+        'Darshan', 'Eswari', 'Farhan',
     ];
-    db_1.store.platforms.push(...platforms);
-    const teams = [
-        { id: 1, name: 'Platform Team' },
-        { id: 2, name: 'Backend Team' },
-        { id: 3, name: 'Frontend Team' },
-        { id: 4, name: 'DevOps Team' },
-        { id: 5, name: 'QA Automation' },
+    const extraLastNames = [
+        'Rao', 'Reddy', 'Kumar', 'Naidu', 'Sharma', 'Verma', 'Gupta', 'Patel',
+        'Singh', 'Iyer', 'Pillai', 'Nair', 'Menon', 'Joshi', 'Desai',
     ];
-    db_1.store.teams.push(...teams);
-    db_1.store.developers.push({ id: 1, name: 'Rohit Sharma', avatar: 'RS', team_id: 1 }, { id: 2, name: 'Anita Patel', avatar: 'AP', team_id: 2 }, { id: 3, name: 'Sandeep Yadav', avatar: 'SY', team_id: 3 }, { id: 4, name: 'Priya Verma', avatar: 'PV', team_id: 4 }, { id: 5, name: 'Karan Singh', avatar: 'KS', team_id: 5 });
-    const dates = ['2025-05-12', '2025-05-13', '2025-05-14', '2025-05-15', '2025-05-16', '2025-05-17', '2025-05-18'];
-    const statsData = [
-        { pid: 1, data: [[320000, 450000, 8200], [290000, 410000, 7800], [350000, 490000, 8900], [380000, 530000, 9400], [410000, 580000, 10200], [440000, 620000, 11000], [460000, 650000, 11800]] },
-        { pid: 2, data: [[180000, 250000, 4600], [160000, 230000, 4200], [200000, 280000, 5100], [220000, 310000, 5600], [240000, 340000, 6100], [260000, 370000, 6600], [280000, 400000, 7100]] },
-        { pid: 3, data: [[120000, 180000, 3200], [110000, 165000, 2900], [135000, 200000, 3600], [150000, 220000, 4000], [165000, 245000, 4400], [180000, 265000, 4800], [190000, 280000, 5100]] },
-        { pid: 4, data: [[80000, 110000, 2100], [75000, 105000, 1900], [90000, 125000, 2400], [100000, 140000, 2700], [110000, 155000, 3000], [120000, 170000, 3300], [130000, 180000, 3600]] },
-        { pid: 5, data: [[60000, 90000, 1500], [55000, 82000, 1400], [68000, 100000, 1700], [75000, 110000, 1900], [82000, 122000, 2100], [90000, 134000, 2300], [95000, 142000, 2500]] },
+    for (let i = 0; i < 45; i++) {
+        const firstName = extraFirstNames[i % extraFirstNames.length];
+        const lastName = extraLastNames[i % extraLastNames.length];
+        const fullName = `${firstName} ${lastName}`;
+        const initials = `${firstName[0]}${lastName[0]}`;
+        const teamId = TEAMS[i % TEAMS.length].id;
+        developerPool.push({ id: i + 6, name: fullName, avatar: initials, team_id: teamId });
+    }
+    db_1.store.developers.push(...developerPool);
+    // ── daily_stats — 90 days × 5 platforms = 450 rows ──
+    const dates = generateDateRange(90);
+    // Base traffic per platform (requests, tokens, cost) — grows over time
+    const platformBase = [
+        { pid: 1, req: 320000, tok: 450000, cost: 8200 },
+        { pid: 2, req: 180000, tok: 250000, cost: 4600 },
+        { pid: 3, req: 120000, tok: 180000, cost: 3200 },
+        { pid: 4, req: 80000, tok: 110000, cost: 2100 },
+        { pid: 5, req: 60000, tok: 90000, cost: 1500 },
     ];
     let statId = 1;
-    statsData.forEach(s => s.data.forEach((d, i) => {
-        db_1.store.daily_stats.push({ id: statId++, date: dates[i], platform_id: s.pid, requests: d[0], tokens: d[1], cost: d[2] });
-    }));
-    const promptsData = [
-        ['Explain this code', 18245, 92, 1245],
-        ['Write unit tests', 15672, 89, 2134],
-        ['Refactor this code', 12398, 91, 1876],
-        ['Debug issue', 11245, 85, 1567],
-        ['Optimize performance', 9876, 88, 1345],
-        ['Generate documentation', 8923, 94, 987],
-        ['Code review', 7654, 87, 1432],
-        ['Fix bug', 6789, 90, 1123],
-    ];
-    promptsData.forEach((p, i) => db_1.store.prompts.push({ id: i + 1, prompt_text: p[0], uses: p[1], success_rate: p[2], avg_tokens: p[3] }));
-    const scoresData = [
-        [1, 92, 8], [2, 89, 5], [3, 87, 3], [4, 86, 6], [5, 84, 2],
-    ];
-    scoresData.forEach((s, i) => db_1.store.developer_scores.push({ id: i + 1, developer_id: s[0], score: s[1], trend: s[2], period: 'May 12 - May 18' }));
-    const teamCostsData = [
-        [1, 54235, 24.6], [2, 42876, 18.7], [3, 28945, 20.1], [4, 26134, 15.3], [5, 18055, 19.8],
-    ];
-    teamCostsData.forEach((t, i) => db_1.store.team_costs.push({ id: i + 1, team_id: t[0], cost: t[1], change_pct: t[2], period: 'May 12 - May 18' }));
-    const modelCostsData = [
-        ['GPT-4o', 58762, 31.6], ['Claude 3.5 Sonnet', 42138, 22.6], ['GPT-4 Turbo', 28945, 15.6],
-        ['Claude 3 Haiku', 18456, 9.9], ['Gemini 1.5 Pro', 14235, 7.7],
-    ];
-    modelCostsData.forEach((m, i) => db_1.store.model_costs.push({ id: i + 1, model_name: m[0], cost: m[1], pct: m[2], period: 'May 12 - May 18' }));
-    const now = new Date();
-    const activitiesData = [
-        [1, 'Used Claude 3.5 Sonnet', 3, 2],
-        [2, 'Used GPT-4o', 5, 3],
-        [3, 'Used Cursor - Claude 3.5', 2, 5],
-        [4, 'Used GitHub Copilot', 1, 6],
-        [5, 'Used Devin AI', 4, 8],
-    ];
-    activitiesData.forEach((a, i) => {
-        const t = new Date(now.getTime() - a[3] * 60000);
-        db_1.store.live_activity.push({ id: i + 1, developer_id: a[0], action: a[1], platform_id: a[2], created_at: t.toISOString() });
+    dates.forEach((date, dayIdx) => {
+        const growthFactor = 1 + dayIdx * 0.008; // ~72% growth over 90 days
+        platformBase.forEach(pb => {
+            const weekendDip = [0, 6].includes(new Date(date).getDay()) ? 0.65 : 1;
+            const noise = randFloat(0.88, 1.12);
+            db_1.store.daily_stats.push({
+                id: statId++,
+                date,
+                platform_id: pb.pid,
+                requests: Math.round(pb.req * growthFactor * weekendDip * noise),
+                tokens: Math.round(pb.tok * growthFactor * weekendDip * noise),
+                cost: Math.round(pb.cost * growthFactor * weekendDip * noise),
+            });
+        });
     });
-    const wasteData = [
-        ['efficiency', 'High token, low success prompts', 23, 'high'],
-        ['redundancy', 'Repeated prompts', 156, 'medium'],
-        ['cost', 'Overused expensive models', 14, 'high'],
-        ['optimization', 'Inefficient long prompts', 31, 'low'],
-    ];
-    wasteData.forEach((w, i) => db_1.store.waste_items.push({ id: i + 1, category: w[0], description: w[1], count: w[2], severity: w[3] }));
-    const insightsData = [
-        ['cost', 'Cost Optimization', 'Team Backend is spending 38% more than average.', 'dollar'],
-        ['model', 'Model Recommendation', 'Use GPT-4o Mini for simple tasks to save $12,430', 'sparkles'],
-        ['prompt', 'Prompt Optimization', 'Optimize 156 repeated prompts to save tokens', 'edit'],
-        ['security', 'Security Alert', '3 prompts contain potential sensitive information', 'shield'],
-        ['productivity', 'Productivity Boost', 'Developers saved 1,842 hours this week!', 'trending-up'],
-    ];
-    insightsData.forEach((ins, i) => db_1.store.insights.push({ id: i + 1, type: ins[0], title: ins[1], description: ins[2], icon: ins[3] }));
-    console.log('[TokenTrek] Seed data loaded into memory.');
+    // ── prompts — 300 realistic records ──
+    let promptId = 1;
+    for (let i = 0; i < 300; i++) {
+        const template = PROMPT_TEMPLATES[i % PROMPT_TEMPLATES.length];
+        const project = pick(PROJECTS);
+        const text = template.replace('{project}', project);
+        db_1.store.prompts.push({
+            id: promptId++,
+            prompt_text: text,
+            uses: randInt(50, 25000),
+            success_rate: randInt(72, 98),
+            avg_tokens: randInt(400, 3500),
+        });
+    }
+    // ── developer_scores — one score per developer ──
+    developerPool.forEach((dev, i) => {
+        db_1.store.developer_scores.push({
+            id: i + 1,
+            developer_id: dev.id,
+            score: randInt(60, 99),
+            trend: randInt(-10, 15),
+            period: dates[dates.length - 7] + ' - ' + dates[dates.length - 1],
+        });
+    });
+    // ── team_costs — one cost entry per team ──
+    TEAMS.forEach((team, i) => {
+        db_1.store.team_costs.push({
+            id: i + 1,
+            team_id: team.id,
+            cost: randInt(15000, 80000),
+            change_pct: randFloat(-5, 35),
+            period: dates[dates.length - 7] + ' - ' + dates[dates.length - 1],
+        });
+    });
+    // ── model_costs — one entry per model ──
+    let totalModelCost = 0;
+    const rawModelCosts = MODELS.map((name, i) => {
+        const c = randInt(5000, 65000) * (MODEL_WEIGHTS[i] / MODEL_WEIGHTS[0]);
+        totalModelCost += c;
+        return { name, cost: Math.round(c) };
+    });
+    rawModelCosts.forEach((m, i) => {
+        db_1.store.model_costs.push({
+            id: i + 1,
+            model_name: m.name,
+            cost: m.cost,
+            pct: parseFloat(((m.cost / totalModelCost) * 100).toFixed(1)),
+            period: dates[dates.length - 7] + ' - ' + dates[dates.length - 1],
+        });
+    });
+    // ── live_activity — 4200 records spread across last 30 days ──
+    const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000;
+    for (let i = 0; i < 4200; i++) {
+        const dev = developerPool[i % developerPool.length];
+        const platform = weightedPick(PLATFORMS, [0.35, 0.25, 0.20, 0.10, 0.10]);
+        const msAgo = randInt(0, MS_30_DAYS);
+        db_1.store.live_activity.push({
+            id: i + 1,
+            developer_id: dev.id,
+            action: pick(ACTIONS),
+            platform_id: platform.id,
+            created_at: isoOffset(msAgo),
+        });
+    }
+    // ── waste_items — one entry per waste category with realistic counts ──
+    WASTE_CATEGORIES.forEach((w, i) => {
+        db_1.store.waste_items.push({
+            id: i + 1,
+            category: w.category,
+            description: w.description,
+            count: randInt(10, 250),
+            severity: w.severity,
+        });
+    });
+    // ── insights ──
+    INSIGHT_TEMPLATES.forEach((tmpl, i) => {
+        const team = pick(TEAMS).name;
+        const description = tmpl.description
+            .replace('{team}', team)
+            .replace('{pct}', randInt(15, 45).toString())
+            .replace('{save}', randInt(5000, 20000).toLocaleString())
+            .replace('{count}', randInt(50, 300).toString())
+            .replace('{tokens}', (randInt(100, 900) * 1000).toLocaleString())
+            .replace('{hours}', randInt(500, 3000).toLocaleString());
+        db_1.store.insights.push({
+            id: i + 1,
+            type: tmpl.type,
+            title: tmpl.title,
+            description,
+            icon: tmpl.icon,
+        });
+    });
+    // ─── summary ──────────────────────────────────────────────────────────────
+    const total = db_1.store.daily_stats.length +
+        db_1.store.prompts.length +
+        db_1.store.live_activity.length +
+        db_1.store.developers.length +
+        db_1.store.developer_scores.length +
+        db_1.store.team_costs.length +
+        db_1.store.model_costs.length +
+        db_1.store.waste_items.length +
+        db_1.store.insights.length;
+    console.log(`[TokenTrek] Seed complete — ${total} records loaded into memory.`);
+    console.log(`  platforms:         ${db_1.store.platforms.length}`);
+    console.log(`  teams:             ${db_1.store.teams.length}`);
+    console.log(`  developers:        ${db_1.store.developers.length}`);
+    console.log(`  daily_stats:       ${db_1.store.daily_stats.length}`);
+    console.log(`  prompts:           ${db_1.store.prompts.length}`);
+    console.log(`  developer_scores:  ${db_1.store.developer_scores.length}`);
+    console.log(`  team_costs:        ${db_1.store.team_costs.length}`);
+    console.log(`  model_costs:       ${db_1.store.model_costs.length}`);
+    console.log(`  live_activity:     ${db_1.store.live_activity.length}`);
+    console.log(`  waste_items:       ${db_1.store.waste_items.length}`);
+    console.log(`  insights:          ${db_1.store.insights.length}`);
 }
