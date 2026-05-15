@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Trash2, TriangleAlert as AlertTriangle, TrendingDown, DollarSign, RefreshCw, Zap } from 'lucide-react';
+import { Trash2, AlertTriangle, TrendingDown, DollarSign, RefreshCw, Zap } from 'lucide-react';
 import { fetchAIWaste, fetchRecommendations } from '../api/analytics';
 import { SectionCard, KpiCard, Badge, Select, SearchBar, FilterBar, Pagination, LoadingOverlay, EmptyState, ProgressBar, PageHeader } from '../components/ui';
 
