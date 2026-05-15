@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CheckCircle, XCircle, ChevronDown, ChevronUp, FileSpreadsheet, AlertTriangle, Sparkles, Bell, Shield, Users, Cpu } from 'lucide-react';
+import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CircleCheck as CheckCircle, Circle as XCircle, ChevronDown, ChevronUp, FileSpreadsheet, TriangleAlert as AlertTriangle, Sparkles, Bell, Shield, Users, Cpu } from 'lucide-react';
 import { importData, resetDatabase, generateDemo, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
 import { SectionCard, Badge, Tabs } from '../components/ui';
 
@@ -94,32 +94,39 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="px-6 py-4 border-b border-gray-100 bg-white flex-shrink-0">
-        <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Configure TokenTrek – data, notifications, security & integrations</p>
+    <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
+      <div className="flex-shrink-0 bg-white border-b px-6 py-4" style={{ borderColor: '#e5eaf0' }}>
+        <h1 className="text-base font-semibold tracking-tight" style={{ color: '#0d1f30' }}>Settings</h1>
+        <p className="text-xs mt-0.5" style={{ color: '#8ba3be' }}>Configure TokenTrek – data, notifications, security & integrations</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0" style={{ background: '#f0f4f8' }}>
         {/* Tab nav */}
-        <div className="border-b border-gray-100 bg-white px-6 flex-shrink-0">
+        <div className="bg-white border-b px-6 flex-shrink-0" style={{ borderColor: '#e5eaf0' }}>
           <div className="flex">
             {[
-              { id: 'data', label: 'Data Management', icon: <Database size={14} /> },
-              { id: 'notifications', label: 'Notifications', icon: <Bell size={14} /> },
-              { id: 'security', label: 'Security', icon: <Shield size={14} /> },
-              { id: 'team', label: 'Team Budgets', icon: <Users size={14} /> },
-              { id: 'models', label: 'AI Models', icon: <Cpu size={14} /> },
+              { id: 'data', label: 'Data Management', icon: <Database size={13} /> },
+              { id: 'notifications', label: 'Notifications', icon: <Bell size={13} /> },
+              { id: 'security', label: 'Security', icon: <Shield size={13} /> },
+              { id: 'team', label: 'Team Budgets', icon: <Users size={13} /> },
+              { id: 'models', label: 'AI Models', icon: <Cpu size={13} /> },
             ].map(t => (
-              <button key={t.id} onClick={() => setTab(t.id as Tab)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id as Tab)}
+                className="flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all"
+                style={tab === t.id
+                  ? { borderColor: '#0078d4', color: '#0078d4' }
+                  : { borderColor: 'transparent', color: '#8ba3be' }
+                }
+              >
                 {t.icon}{t.label}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-5">
           {tab === 'data' && (
             <div className="space-y-6 max-w-4xl">
               {/* Upload */}

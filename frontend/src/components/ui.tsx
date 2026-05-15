@@ -1,32 +1,38 @@
 import React from 'react';
-import { Loader as Loader2, Search, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Loader as Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 
-// ─── Loading Skeleton ────────────────────────────────────────────────────────
+// ─── Skeleton ────────────────────────────────────────────────────────────────
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded ${className}`} />;
+  return <div className={`animate-pulse rounded-lg ${className}`} style={{ background: '#edf1f5' }} />;
 }
 
 export function CardSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5 animate-pulse">
-      <Skeleton className="h-3 w-24 mb-3" />
-      <Skeleton className="h-7 w-32 mb-2" />
-      <Skeleton className="h-3 w-20" />
+    <div className="bg-white rounded-xl border p-5 animate-pulse" style={{ borderColor: '#e5eaf0' }}>
+      <div className="flex items-start justify-between mb-4">
+        <Skeleton className="w-10 h-10 rounded-xl" />
+        <Skeleton className="w-14 h-5 rounded-md" />
+      </div>
+      <Skeleton className="h-7 w-28 mb-1.5" />
+      <Skeleton className="h-3 w-20 mb-1" />
+      <Skeleton className="h-3 w-16" />
     </div>
   );
 }
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="space-y-2">
+    <div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex gap-4 py-3 px-4 animate-pulse">
-          <Skeleton className="h-4 w-8" />
-          <Skeleton className="h-4 flex-1" />
-          <Skeleton className="h-4 w-20" />
+        <div key={i} className="flex gap-4 py-3.5 px-5 border-b animate-pulse" style={{ borderColor: '#f0f4f8' }}>
+          <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-3/5" />
+            <Skeleton className="h-3 w-2/5" />
+          </div>
           <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-14" />
         </div>
       ))}
     </div>
@@ -35,25 +41,25 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function ChartSkeleton({ height = 200 }: { height?: number }) {
   return (
-    <div className="animate-pulse flex items-end gap-2 px-4" style={{ height }}>
-      {[60, 80, 45, 90, 70, 95, 55, 75, 85, 65].map((h, i) => (
-        <div key={i} className="flex-1 bg-gray-100 rounded-t" style={{ height: `${h}%` }} />
+    <div className="animate-pulse flex items-end gap-2 px-4 pt-4" style={{ height }}>
+      {[55, 75, 45, 85, 65, 90, 50, 70, 80, 60].map((h, i) => (
+        <div key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: '#edf1f5' }} />
       ))}
     </div>
   );
 }
 
-// ─── Loading Spinner ─────────────────────────────────────────────────────────
+// ─── Spinner ─────────────────────────────────────────────────────────────────
 
 export function Spinner({ size = 20 }: { size?: number }) {
-  return <Loader2 size={size} className="animate-spin text-blue-500" />;
+  return <Loader2 size={size} className="animate-spin" style={{ color: '#0078d4' }} />;
 }
 
 export function LoadingOverlay() {
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-3">
-      <Spinner size={32} />
-      <p className="text-sm text-gray-400">Loading data...</p>
+      <Spinner size={28} />
+      <p className="text-xs" style={{ color: '#8ba3be' }}>Loading data...</p>
     </div>
   );
 }
@@ -70,12 +76,12 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-300">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: '#f0f4f8', color: '#c5d4e0' }}>
         {icon}
       </div>
       <div>
-        <p className="text-sm font-semibold text-gray-700">{title}</p>
-        {description && <p className="text-xs text-gray-400 mt-1 max-w-xs">{description}</p>}
+        <p className="text-sm font-semibold" style={{ color: '#4a6480' }}>{title}</p>
+        {description && <p className="text-xs mt-1 max-w-xs" style={{ color: '#8ba3be' }}>{description}</p>}
       </div>
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -94,13 +100,16 @@ interface SearchBarProps {
 export function SearchBar({ value, onChange, placeholder = 'Search...', className = '' }: SearchBarProps) {
   return (
     <div className={`relative ${className}`}>
-      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#8ba3be' }} />
       <input
         type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 placeholder-gray-400 transition-all"
+        className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border outline-none transition-all"
+        style={{ borderColor: '#e5eaf0', background: '#f7fafd', color: '#0d1f30' }}
+        onFocus={e => { e.currentTarget.style.borderColor = '#0078d4'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(0,120,212,0.12)'; }}
+        onBlur={e => { e.currentTarget.style.borderColor = '#e5eaf0'; e.currentTarget.style.boxShadow = 'none'; }}
       />
     </div>
   );
@@ -122,17 +131,20 @@ export function Pagination({ page, totalPages, onPage, totalItems, pageSize }: P
   const end = totalItems && pageSize ? Math.min(page * pageSize, totalItems) : undefined;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+    <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: '#f0f4f8' }}>
       {totalItems !== undefined ? (
-        <p className="text-xs text-gray-500">Showing {start}–{end} of {totalItems}</p>
+        <p className="text-xs" style={{ color: '#8ba3be' }}>
+          Showing {start}–{end} of {totalItems}
+        </p>
       ) : <div />}
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPage(page - 1)}
           disabled={page === 1}
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ borderColor: '#e5eaf0', color: '#4a6480' }}
         >
-          <ChevronLeft size={14} className="text-gray-600" />
+          <ChevronLeft size={13} />
         </button>
         {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
           let p = i + 1;
@@ -145,11 +157,11 @@ export function Pagination({ page, totalPages, onPage, totalItems, pageSize }: P
             <button
               key={p}
               onClick={() => onPage(p)}
-              className={`min-w-[28px] h-7 px-1.5 text-xs rounded font-medium transition-colors ${
-                p === page
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
+              className="min-w-[28px] h-7 px-1.5 text-xs rounded-lg font-medium transition-colors border"
+              style={p === page
+                ? { background: '#0078d4', color: 'white', borderColor: '#0078d4' }
+                : { color: '#4a6480', borderColor: '#e5eaf0', background: 'white' }
+              }
             >
               {p}
             </button>
@@ -158,16 +170,17 @@ export function Pagination({ page, totalPages, onPage, totalItems, pageSize }: P
         <button
           onClick={() => onPage(page + 1)}
           disabled={page === totalPages}
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ borderColor: '#e5eaf0', color: '#4a6480' }}
         >
-          <ChevronRight size={14} className="text-gray-600" />
+          <ChevronRight size={13} />
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Select Filter ────────────────────────────────────────────────────────────
+// ─── Select ───────────────────────────────────────────────────────────────────
 
 interface SelectProps {
   value: string;
@@ -182,13 +195,16 @@ export function Select({ value, onChange, options, className = '' }: SelectProps
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-gray-700 cursor-pointer transition-all"
+        className="appearance-none pl-3 pr-7 py-1.5 text-xs rounded-lg border outline-none cursor-pointer transition-all font-medium"
+        style={{ borderColor: '#e5eaf0', background: 'white', color: '#4a6480' }}
+        onFocus={e => { e.currentTarget.style.borderColor = '#0078d4'; }}
+        onBlur={e => { e.currentTarget.style.borderColor = '#e5eaf0'; }}
       >
         {options.map(o => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
-      <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      <ChevronDown size={11} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#8ba3be' }} />
     </div>
   );
 }
@@ -197,30 +213,35 @@ export function Select({ value, onChange, options, className = '' }: SelectProps
 
 type BadgeVariant = 'green' | 'red' | 'yellow' | 'blue' | 'gray' | 'orange';
 
-const badgeStyles: Record<BadgeVariant, string> = {
-  green: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  red: 'bg-red-50 text-red-700 border-red-200',
-  yellow: 'bg-amber-50 text-amber-700 border-amber-200',
-  blue: 'bg-blue-50 text-blue-700 border-blue-200',
-  gray: 'bg-gray-50 text-gray-600 border-gray-200',
-  orange: 'bg-orange-50 text-orange-700 border-orange-200',
+const badgeMap: Record<BadgeVariant, { bg: string; color: string; border: string }> = {
+  green:  { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' },
+  red:    { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+  yellow: { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
+  blue:   { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
+  gray:   { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
+  orange: { bg: '#fff7ed', color: '#ea580c', border: '#fed7aa' },
 };
 
 export function Badge({ variant = 'gray', children }: { variant?: BadgeVariant; children: React.ReactNode }) {
+  const s = badgeMap[variant];
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border ${badgeStyles[variant]}`}>
+    <span
+      className="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-md border"
+      style={{ background: s.bg, color: s.color, borderColor: s.border }}
+    >
       {children}
     </span>
   );
 }
 
-// ─── Trend Indicator ──────────────────────────────────────────────────────────
+// ─── Trend ────────────────────────────────────────────────────────────────────
 
 export function Trend({ value, suffix = '%', inverse = false }: { value: number; suffix?: string; inverse?: boolean }) {
   const isPositive = inverse ? value < 0 : value > 0;
-  const isNegative = inverse ? value > 0 : value < 0;
+  const color = isPositive ? '#059669' : value === 0 ? '#8ba3be' : '#dc2626';
   return (
-    <span className={`text-xs font-semibold ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-gray-400'}`}>
+    <span className="inline-flex items-center gap-0.5 text-xs font-semibold" style={{ color }}>
+      {value > 0 ? <TrendingUp size={10} /> : value < 0 ? <TrendingDown size={10} /> : null}
       {value > 0 ? '+' : ''}{value}{suffix}
     </span>
   );
@@ -228,14 +249,28 @@ export function Trend({ value, suffix = '%', inverse = false }: { value: number;
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-const avatarColors = ['#0078d4', '#00b4d8', '#e07b39', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#14b8a6'];
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #0078d4, #00aaff)',
+  'linear-gradient(135deg, #e07b39, #f59e0b)',
+  'linear-gradient(135deg, #10b981, #34d399)',
+  'linear-gradient(135deg, #3b82f6, #6366f1)',
+  'linear-gradient(135deg, #ec4899, #f43f5e)',
+  'linear-gradient(135deg, #14b8a6, #06b6d4)',
+  'linear-gradient(135deg, #8b5cf6, #a855f7)',
+  'linear-gradient(135deg, #f97316, #fb923c)',
+];
 
 export function Avatar({ initials, size = 32, index = 0 }: { initials: string; size?: number; index?: number }) {
-  const bg = avatarColors[index % avatarColors.length];
   return (
     <div
       className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-      style={{ width: size, height: size, background: bg, fontSize: size * 0.35 }}
+      style={{
+        width: size,
+        height: size,
+        background: AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length],
+        fontSize: size * 0.34,
+        letterSpacing: '0.02em',
+      }}
     >
       {initials}
     </div>
@@ -244,80 +279,120 @@ export function Avatar({ initials, size = 32, index = 0 }: { initials: string; s
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
-export function ProgressBar({ value, max = 100, color = '#0078d4', className = '' }: { value: number; max?: number; color?: string; className?: string }) {
+export function ProgressBar({ value, max = 100, color = '#0078d4', className = '' }: {
+  value: number; max?: number; color?: string; className?: string;
+}) {
   const pct = Math.min(100, (value / max) * 100);
   return (
-    <div className={`h-1.5 bg-gray-100 rounded-full overflow-hidden ${className}`}>
-      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+    <div className={`h-1.5 rounded-full overflow-hidden ${className}`} style={{ background: '#edf1f5' }}>
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${pct}%`, background: color }}
+      />
     </div>
   );
 }
 
-// ─── Stat Mini Card ───────────────────────────────────────────────────────────
+// ─── MiniStat ─────────────────────────────────────────────────────────────────
 
-export function MiniStat({ label, value, change, color = '#0078d4' }: { label: string; value: string; change?: number; color?: string }) {
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4">
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className="text-xl font-bold text-gray-900" style={{ color }}>{value}</p>
-      {change !== undefined && (
-        <div className="mt-1">
-          <Trend value={change} />
-          <span className="text-xs text-gray-400 ml-1">vs last week</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Filter Bar ───────────────────────────────────────────────────────────────
-
-export function FilterBar({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {children}
-    </div>
-  );
-}
-
-// ─── Section Card ─────────────────────────────────────────────────────────────
-
-export function SectionCard({ title, action, children, className = '' }: { title?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`bg-white border border-gray-100 rounded-xl overflow-hidden ${className}`}>
-      {(title || action) && (
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50">
-          {title && <p className="text-sm font-semibold text-gray-800">{title}</p>}
-          {action && <div>{action}</div>}
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
-
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
-
-export function KpiCard({ label, value, change, icon, iconBg = '#eff6ff', iconColor = '#2563eb', sub }: {
-  label: string; value: string; change?: number; icon: React.ReactNode; iconBg?: string; iconColor?: string; sub?: string;
+export function MiniStat({ label, value, change, color = '#0078d4' }: {
+  label: string; value: string; change?: number; color?: string;
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+    <div className="bg-white rounded-xl border p-4" style={{ borderColor: '#e5eaf0' }}>
+      <p className="text-xs mb-1" style={{ color: '#8ba3be' }}>{label}</p>
+      <p className="text-xl font-bold mb-1" style={{ color }}>{value}</p>
+      {change !== undefined && (
+        <div className="flex items-center gap-1">
+          <Trend value={change} />
+          <span className="text-xs" style={{ color: '#8ba3be' }}>vs last week</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FilterBar ────────────────────────────────────────────────────────────────
+
+export function FilterBar({ children }: { children: React.ReactNode }) {
+  return <div className="flex items-center gap-2 flex-wrap">{children}</div>;
+}
+
+// ─── SectionCard ─────────────────────────────────────────────────────────────
+
+export function SectionCard({
+  title, action, children, className = '', noPadding = false,
+}: {
+  title?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  noPadding?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-white rounded-xl border overflow-hidden transition-shadow duration-200 ${className}`}
+      style={{ borderColor: '#e5eaf0', boxShadow: '0 1px 3px rgba(0,30,60,0.05)' }}
+    >
+      {(title || action) && (
+        <div
+          className="flex items-center justify-between px-5 py-3.5 border-b"
+          style={{ borderColor: '#f0f4f8' }}
+        >
+          {title && (
+            <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{title}</p>
+          )}
+          {action && <div className="flex items-center gap-2">{action}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+// ─── KpiCard ─────────────────────────────────────────────────────────────────
+
+export function KpiCard({
+  label, value, change, icon, iconBg = '#eff6ff', iconColor = '#0078d4', sub,
+}: {
+  label: string;
+  value: string;
+  change?: number;
+  icon: React.ReactNode;
+  iconBg?: string;
+  iconColor?: string;
+  sub?: string;
+}) {
+  return (
+    <div
+      className="bg-white rounded-xl border p-5 transition-all duration-200 cursor-default group"
+      style={{ borderColor: '#e5eaf0', boxShadow: '0 1px 3px rgba(0,30,60,0.05)' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,30,60,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,30,60,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+    >
+      <div className="flex items-start justify-between mb-3.5">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: iconBg }}
+        >
           <span style={{ color: iconColor }}>{icon}</span>
         </div>
         {change !== undefined && (
-          <div className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            change >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-          }`}>
+          <div
+            className="flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-lg"
+            style={change >= 0
+              ? { background: '#ecfdf5', color: '#059669' }
+              : { background: '#fef2f2', color: '#dc2626' }
+            }
+          >
+            {change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
             {change >= 0 ? '+' : ''}{change}%
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold text-gray-900 mb-0.5">{value}</p>
-      <p className="text-xs text-gray-500">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      <p className="text-2xl font-bold mb-0.5 tracking-tight" style={{ color: '#0d1f30' }}>{value}</p>
+      <p className="text-xs font-medium" style={{ color: '#8ba3be' }}>{label}</p>
+      {sub && <p className="text-xs mt-0.5" style={{ color: '#b0c4d4' }}>{sub}</p>}
     </div>
   );
 }
@@ -325,27 +400,75 @@ export function KpiCard({ label, value, change, icon, iconBg = '#eff6ff', iconCo
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 interface TabsProps {
-  tabs: { id: string; label: string }[];
+  tabs: { id: string; label: string; count?: number }[];
   active: string;
   onChange: (id: string) => void;
 }
 
 export function Tabs({ tabs, active, onChange }: TabsProps) {
   return (
-    <div className="flex border-b border-gray-100">
+    <div className="flex border-b" style={{ borderColor: '#f0f4f8' }}>
       {tabs.map(t => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            active === t.id
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className="px-4 py-2.5 text-xs font-semibold border-b-2 transition-all duration-150 flex items-center gap-1.5"
+          style={active === t.id
+            ? { borderColor: '#0078d4', color: '#0078d4' }
+            : { borderColor: 'transparent', color: '#8ba3be' }
+          }
+          onMouseEnter={e => { if (active !== t.id) e.currentTarget.style.color = '#4a6480'; }}
+          onMouseLeave={e => { if (active !== t.id) e.currentTarget.style.color = '#8ba3be'; }}
         >
           {t.label}
+          {t.count !== undefined && (
+            <span
+              className="px-1.5 py-0.5 rounded text-xs font-bold"
+              style={{ background: active === t.id ? '#eff6ff' : '#f0f4f8', color: active === t.id ? '#0078d4' : '#8ba3be' }}
+            >
+              {t.count}
+            </span>
+          )}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ─── StatusDot ────────────────────────────────────────────────────────────────
+
+export function StatusDot({ active = true }: { active?: boolean }) {
+  return (
+    <span
+      className="inline-block w-2 h-2 rounded-full"
+      style={{ background: active ? '#10b981' : '#e5eaf0' }}
+    />
+  );
+}
+
+// ─── PageHeader ───────────────────────────────────────────────────────────────
+
+export function PageHeader({
+  title,
+  subtitle,
+  actions,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex-shrink-0 bg-white border-b px-6 py-4"
+      style={{ borderColor: '#e5eaf0' }}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-base font-semibold tracking-tight" style={{ color: '#0d1f30' }}>{title}</h1>
+          {subtitle && <p className="text-xs mt-0.5" style={{ color: '#8ba3be' }}>{subtitle}</p>}
+        </div>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </div>
     </div>
   );
 }

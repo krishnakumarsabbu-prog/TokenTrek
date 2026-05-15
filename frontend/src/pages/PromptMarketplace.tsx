@@ -344,23 +344,21 @@ export default function PromptMarketplace() {
   const handleCategory = (v: string) => { setCategory(v); setPage(1); };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100 bg-white flex-shrink-0">
+    <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
+      <div className="flex-shrink-0 bg-white border-b px-6 py-4" style={{ borderColor: '#e5eaf0' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Prompt Marketplace</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Discover, reuse & share high-performing prompts</p>
+            <h1 className="text-base font-semibold tracking-tight" style={{ color: '#0d1f30' }}>Prompt Marketplace</h1>
+            <p className="text-xs mt-0.5" style={{ color: '#8ba3be' }}>Discover, reuse & share high-performing prompts</p>
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="btn-primary">
             <ShoppingBag size={13} /> Submit Prompt
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 min-h-0">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="flex-1 overflow-y-auto p-5 min-h-0">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
           <KpiCard label="Total Prompts" value={String(data.length)} icon={<ShoppingBag size={18} />} iconBg="#eff6ff" iconColor="#2563eb" />
           <KpiCard label="Total Uses" value={fmt(totalUses)} change={22.4} icon={<TrendingUp size={18} />} iconBg="#f0fdf4" iconColor="#16a34a" />
           <KpiCard label="Avg Success Rate" value={`${avgSuccess}%`} icon={<Target size={18} />} iconBg="#fff7ed" iconColor="#ea580c" sub={`Avg rating ${avgRating} ★`} />

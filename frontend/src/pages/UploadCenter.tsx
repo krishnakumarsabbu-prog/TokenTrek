@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, Eye, EyeOff, ChevronDown, ChevronUp, Download, Trash2, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, CircleCheck as CheckCircle, Circle as XCircle, Eye, EyeOff, ChevronDown, ChevronUp, Download, Trash2, CircleAlert as AlertCircle } from 'lucide-react';
 import { importData, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
 import { SectionCard, Badge } from '../components/ui';
 
@@ -90,12 +90,12 @@ export default function UploadCenter() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="px-6 py-4 border-b border-gray-100 bg-white flex-shrink-0">
+    <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
+      <div className="flex-shrink-0 bg-white border-b px-6 py-4" style={{ borderColor: '#e5eaf0' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Upload Center</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Import Excel/CSV data files with validation & preview</p>
+            <h1 className="text-base font-semibold tracking-tight" style={{ color: '#0d1f30' }}>Upload Center</h1>
+            <p className="text-xs mt-0.5" style={{ color: '#8ba3be' }}>Import Excel/CSV data files with validation & preview</p>
           </div>
           <div className="flex items-center gap-2">
             {(['platforms', 'developers', 'daily_stats'] as const).map(sheet => (

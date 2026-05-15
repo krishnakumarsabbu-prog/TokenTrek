@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CirclePlay as PlayCircle, Clock, CircleCheck as CheckCircle, Circle as XCircle, DollarSign, Search, X, User, Cpu, Globe, FolderOpen, ThumbsUp, ThumbsDown, Minus, Code as Code2, FileCode as FileCode2, Hash, Zap, ChevronRight } from 'lucide-react';
+import { Play as PlayCircle, Clock, CircleCheck as CheckCircle, Circle as XCircle, DollarSign, Search, X, User, Cpu, Globe, FolderOpen, ThumbsUp, ThumbsDown, Minus, Code as Code2, FileCode as FileCode2, Hash, Zap, ChevronRight } from 'lucide-react';
 import { fetchReplayItems } from '../api/analytics';
 import {
   SectionCard, SearchBar, Select, Pagination, KpiCard, Badge,
@@ -281,23 +281,21 @@ export default function ReplayCenter() {
   const models: string[] = ['all', ...Array.from(new Set(modelSet))];
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Page header */}
-      <div className="px-6 py-4 border-b border-gray-100 bg-white flex-shrink-0">
+    <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
+      <div className="flex-shrink-0 bg-white border-b px-6 py-4" style={{ borderColor: '#e5eaf0' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Replay Center</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Review, analyze & replay AI sessions</p>
+            <h1 className="text-base font-semibold tracking-tight" style={{ color: '#0d1f30' }}>Replay Center</h1>
+            <p className="text-xs mt-0.5" style={{ color: '#8ba3be' }}>Review, analyze & replay AI sessions</p>
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="btn-primary">
             <PlayCircle size={13} /> Export Sessions
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 min-h-0">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="flex-1 overflow-y-auto p-5 min-h-0">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
           <KpiCard label="Total Sessions" value={String(data.length)} change={18.6} icon={<PlayCircle size={18} />} iconBg="#eff6ff" iconColor="#2563eb" />
           <KpiCard label="Success Rate" value={`${successRate}%`} change={2.4} icon={<CheckCircle size={18} />} iconBg="#f0fdf4" iconColor="#16a34a" />
           <KpiCard label="Avg Duration" value={`${avgDuration}s`} icon={<Clock size={18} />} iconBg="#fef3c7" iconColor="#d97706" />

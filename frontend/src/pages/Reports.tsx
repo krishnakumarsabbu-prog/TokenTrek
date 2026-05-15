@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, PieChart, Pie } from 'recharts';
-import { FileText, Download, RefreshCw, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
+import { FileText, Download, RefreshCw, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
 import { fetchReports } from '../api/analytics';
 import { SectionCard, KpiCard, Badge, Select, FilterBar, LoadingOverlay } from '../components/ui';
 
@@ -47,12 +47,12 @@ export default function Reports() {
   }));
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="px-6 py-4 border-b border-gray-100 bg-white flex-shrink-0">
+    <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
+      <div className="flex-shrink-0 bg-white border-b px-6 py-4" style={{ borderColor: '#e5eaf0' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Reports</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Scheduled & on-demand analytics reports</p>
+            <h1 className="text-base font-semibold tracking-tight" style={{ color: '#0d1f30' }}>Reports</h1>
+            <p className="text-xs mt-0.5" style={{ color: '#8ba3be' }}>Scheduled & on-demand analytics reports</p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={period} onChange={setPeriod} options={[
@@ -60,16 +60,16 @@ export default function Reports() {
               { value: 'monthly', label: 'This Month' },
               { value: 'quarterly', label: 'This Quarter' },
             ]} />
-            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="btn-primary">
               <FileText size={13} /> Generate Report
             </button>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 min-h-0">
+      <div className="flex-1 overflow-y-auto p-5 min-h-0" style={{ background: '#f0f4f8' }}>
         {/* KPIs */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
           <KpiCard label="Total Cost" value={`$${(summary.total_cost / 1000).toFixed(0)}K`} change={summary.cost_change} icon={<DollarSign size={18} />} iconBg="#fff7ed" iconColor="#ea580c" />
           <KpiCard label="Total Requests" value={`${(summary.total_requests / 1e6).toFixed(2)}M`} change={summary.request_change} icon={<TrendingUp size={18} />} iconBg="#eff6ff" iconColor="#2563eb" />
           <KpiCard label="Active Developers" value={String(summary.active_developers || 42)} icon={<CheckCircle size={18} />} iconBg="#f0fdf4" iconColor="#16a34a" />
