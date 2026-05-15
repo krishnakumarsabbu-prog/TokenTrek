@@ -11,6 +11,7 @@ export interface ModelCost { id: number; model_name: string; cost: number; pct: 
 export interface LiveActivity { id: number; developer_id: number; action: string; platform_id: number; created_at: string }
 export interface WasteItem { id: number; category: string; description: string; count: number; severity: string }
 export interface Insight { id: number; type: string; title: string; description: string; icon: string }
+export interface ImportRecord { id: number; filename: string; rows: number; status: 'success' | 'error'; errors: string[]; imported_at: string }
 
 export const store: {
   platforms: Platform[];
@@ -24,6 +25,7 @@ export const store: {
   live_activity: LiveActivity[];
   waste_items: WasteItem[];
   insights: Insight[];
+  import_history: ImportRecord[];
 } = {
   platforms: [],
   teams: [],
@@ -36,4 +38,5 @@ export const store: {
   live_activity: [],
   waste_items: [],
   insights: [],
+  import_history: [],
 };

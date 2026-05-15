@@ -14,4 +14,5 @@ exports.store = {
     live_activity: [],
     waste_items: [],
     insights: [],
+    import_history: [],
 };
