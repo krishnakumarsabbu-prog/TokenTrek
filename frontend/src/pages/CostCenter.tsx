@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
-import { DollarSign, TrendingUp, TriangleAlert as AlertTriangle, Target, ArrowUpRight } from 'lucide-react';
+import { DollarSign, TrendingUp, AlertTriangle, Target, ArrowUpRight } from 'lucide-react';
 import { fetchDailyUsage, fetchPlatformUsage, fetchTeamRanking } from '../api/analytics';
 import { SectionCard, KpiCard, Badge, Select, FilterBar, LoadingOverlay } from '../components/ui';
 

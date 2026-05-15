@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from 'recharts';
-import { MessageSquare, TrendingUp, CircleCheck as CheckCircle, Zap, Search } from 'lucide-react';
+import { MessageSquare, TrendingUp, CheckCircle, Zap, Search } from 'lucide-react';
 import { fetchPromptRanking } from '../api/analytics';
 import { SectionCard, SearchBar, Select, Pagination, KpiCard, Badge, FilterBar, LoadingOverlay, EmptyState, ProgressBar, Tabs } from '../components/ui';
 

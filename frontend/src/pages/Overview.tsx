@@ -3,7 +3,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { Activity, TrendingUp, DollarSign, Users, Clock, Zap, TriangleAlert as AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Activity, TrendingUp, DollarSign, Users, Clock, Zap, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import {
   fetchStats, fetchUsageTrend, fetchPlatformCosts,
   fetchModelCosts, fetchTopPrompts, fetchDeveloperScores,

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { TrendingUp, TrendingDown, Award, Users, Zap, DollarSign, ArrowUpRight, ArrowDownRight, MoveHorizontal as MoreHorizontal } from 'lucide-react';
+import { TrendingUp, TrendingDown, Award, Users, Zap, DollarSign, ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react';
 import { fetchDeveloperScores } from '../api/analytics';
 import { SectionCard, SearchBar, Select, Pagination, Avatar, ProgressBar, Badge, KpiCard, Trend, FilterBar, LoadingOverlay, EmptyState } from '../components/ui';
 

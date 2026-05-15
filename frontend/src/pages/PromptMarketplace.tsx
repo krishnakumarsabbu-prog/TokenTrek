@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ShoppingBag, Star, Zap, Users, Search, CircleCheck as CheckCircle, Tag, TrendingUp } from 'lucide-react';
+import { ShoppingBag, Star, Zap, Users, Search, CheckCircle, Tag, TrendingUp } from 'lucide-react';
 import { fetchMarketplacePrompts } from '../api/analytics';
 import { SectionCard, SearchBar, Select, Pagination, KpiCard, Badge, FilterBar, LoadingOverlay, EmptyState } from '../components/ui';
 

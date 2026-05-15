@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CirclePlay as PlayCircle, Clock, CircleCheck as CheckCircle, Circle as XCircle, Zap, DollarSign, Search, Tag, Play } from 'lucide-react';
+import { PlayCircle, Clock, CheckCircle, XCircle, Zap, DollarSign, Search, Tag, Play } from 'lucide-react';
 import { fetchReplayItems } from '../api/analytics';
 import { SectionCard, SearchBar, Select, Pagination, KpiCard, Badge, FilterBar, LoadingOverlay, EmptyState, Avatar } from '../components/ui';
 
