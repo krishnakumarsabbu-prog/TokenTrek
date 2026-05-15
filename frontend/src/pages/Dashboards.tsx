@@ -1,4 +1,4 @@
-import { ChartBar as BarChart3, Plus } from 'lucide-react';
+import { BarChart3, Plus } from 'lucide-react';
 
 const items = ['Executive Overview', 'Engineering Metrics', 'Cost Analysis', 'Security Posture', 'Team Productivity', 'Model Usage'];
 

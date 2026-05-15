@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
-import { Activity, Cpu, DollarSign, Users, Clock, TrendingUp, TrendingDown, ListFilter as Filter, FileSliders as Sliders, ChevronRight, Shield, Zap, MessageSquare, TriangleAlert as AlertTriangle, ChartBar as BarChart2, RefreshCw, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Activity, Cpu, DollarSign, Users, Clock, TrendingUp, TrendingDown, Filter, Sliders, ChevronRight, Shield, Zap, MessageSquare, AlertTriangle, BarChart2, RefreshCw, ArrowUpRight, Sparkles } from 'lucide-react';
 import {
   fetchStats, fetchUsageTrend, fetchPlatformCosts, fetchModelCosts,
   fetchTopPrompts, fetchDeveloperScores, fetchTeamCosts, fetchLiveActivity,
