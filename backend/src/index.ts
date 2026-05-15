@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import { getDb } from './db';
 import { seed } from './seed';
 import overviewRouter from './routes/overview';
 
@@ -10,7 +9,6 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-getDb();
 seed();
 
 app.use('/api/overview', overviewRouter);

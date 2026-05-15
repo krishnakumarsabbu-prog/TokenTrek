@@ -4,15 +4,14 @@ const express_1 = require("express");
 const db_1 = require("../db");
 const router = (0, express_1.Router)();
 router.get('/stats', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    const req_ = db.prepare('SELECT SUM(requests) as v FROM daily_stats').get().v;
-    const tok = db.prepare('SELECT SUM(tokens) as v FROM daily_stats').get().v;
-    const cost = db.prepare('SELECT SUM(cost) as v FROM daily_stats').get().v;
-    const devs = db.prepare('SELECT COUNT(*) as v FROM developers').get().v;
+    const totalRequests = db_1.store.daily_stats.reduce((s, r) => s + r.requests, 0);
+    const totalTokens = db_1.store.daily_stats.reduce((s, r) => s + r.tokens, 0);
+    const totalCost = db_1.store.daily_stats.reduce((s, r) => s + r.cost, 0);
+    const devs = db_1.store.developers.length;
     res.json({
-        totalRequests: req_ || 2450000,
-        totalTokens: tok || 1240000000,
-        totalCost: Math.round(cost) || 186245,
+        totalRequests: totalRequests || 2450000,
+        totalTokens: totalTokens || 1240000000,
+        totalCost: Math.round(totalCost) || 186245,
         activeDevelopers: devs || 342,
         timeSaved: 1842,
         aiRoi: 276300,
@@ -20,47 +19,77 @@ router.get('/stats', (_req, res) => {
     });
 });
 router.get('/usage-trend', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    const rows = db.prepare('SELECT date, SUM(requests) as requests, SUM(tokens) as tokens FROM daily_stats GROUP BY date ORDER BY date').all();
+    const byDate = {};
+    db_1.store.daily_stats.forEach(r => {
+        if (!byDate[r.date])
+            byDate[r.date] = { requests: 0, tokens: 0 };
+        byDate[r.date].requests += r.requests;
+        byDate[r.date].tokens += r.tokens;
+    });
     const devCounts = [45, 52, 58, 63, 71, 78, 84];
-    res.json(rows.map((r, i) => ({ ...r, tokens: Math.floor(r.tokens / 1000), developers: devCounts[i] || 50 })));
+    const rows = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
+    res.json(rows.map(([date, d], i) => ({
+        date,
+        requests: d.requests,
+        tokens: Math.floor(d.tokens / 1000),
+        developers: devCounts[i] || 50,
+    })));
 });
 router.get('/platform-costs', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    const rows = db.prepare('SELECT p.name, p.color, SUM(ds.cost) as cost FROM daily_stats ds JOIN platforms p ON ds.platform_id = p.id GROUP BY p.id ORDER BY cost DESC').all();
-    const total = rows.reduce((s, r) => s + r.cost, 0);
-    res.json({
-        total: Math.round(total),
-        items: rows.map(r => ({ name: r.name, color: r.color, cost: Math.round(r.cost), pct: Math.round((r.cost / total) * 1000) / 10 })),
-    });
+    const byCost = {};
+    db_1.store.daily_stats.forEach(r => { byCost[r.platform_id] = (byCost[r.platform_id] || 0) + r.cost; });
+    const total = Object.values(byCost).reduce((s, v) => s + v, 0);
+    const items = Object.entries(byCost).map(([pid, cost]) => {
+        const p = db_1.store.platforms.find(pl => pl.id === Number(pid));
+        return { name: p?.name || '', color: p?.color || '', cost: Math.round(cost), pct: Math.round((cost / total) * 1000) / 10 };
+    }).sort((a, b) => b.cost - a.cost);
+    res.json({ total: Math.round(total), items });
 });
 router.get('/model-costs', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    res.json(db.prepare('SELECT model_name, cost, pct FROM model_costs ORDER BY cost DESC').all());
+    res.json(db_1.store.model_costs.map(m => ({ model_name: m.model_name, cost: m.cost, pct: m.pct }))
+        .sort((a, b) => b.cost - a.cost));
 });
 router.get('/top-prompts', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    res.json(db.prepare('SELECT prompt_text as prompt, uses, success_rate as successRate, avg_tokens as avgTokens FROM prompts ORDER BY uses DESC LIMIT 5').all());
+    res.json([...db_1.store.prompts]
+        .sort((a, b) => b.uses - a.uses)
+        .slice(0, 5)
+        .map(p => ({ prompt: p.prompt_text, uses: p.uses, successRate: p.success_rate, avgTokens: p.avg_tokens })));
 });
 router.get('/developer-scores', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    res.json(db.prepare('SELECT d.name as developer, d.avatar, ds.score, ds.trend FROM developer_scores ds JOIN developers d ON ds.developer_id = d.id ORDER BY score DESC LIMIT 5').all());
+    res.json([...db_1.store.developer_scores]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(ds => {
+        const dev = db_1.store.developers.find(d => d.id === ds.developer_id);
+        return { developer: dev?.name || '', avatar: dev?.avatar || '', score: ds.score, trend: ds.trend };
+    }));
 });
 router.get('/team-costs', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    res.json(db.prepare('SELECT t.name as team, tc.cost, tc.change_pct as change FROM team_costs tc JOIN teams t ON tc.team_id = t.id ORDER BY cost DESC LIMIT 5').all());
+    res.json([...db_1.store.team_costs]
+        .sort((a, b) => b.cost - a.cost)
+        .slice(0, 5)
+        .map(tc => {
+        const team = db_1.store.teams.find(t => t.id === tc.team_id);
+        return { team: team?.name || '', cost: tc.cost, change: tc.change_pct };
+    }));
 });
 router.get('/live-activity', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    const items = db.prepare('SELECT d.name as developer, d.avatar, la.action, p.name as platform, la.created_at as time FROM live_activity la JOIN developers d ON la.developer_id = d.id LEFT JOIN platforms p ON la.platform_id = p.id ORDER BY la.created_at DESC LIMIT 5').all();
+    const items = [...db_1.store.live_activity]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5)
+        .map(la => {
+        const dev = db_1.store.developers.find(d => d.id === la.developer_id);
+        const platform = db_1.store.platforms.find(p => p.id === la.platform_id);
+        return { developer: dev?.name || '', avatar: dev?.avatar || '', action: la.action, platform: platform?.name || '', time: la.created_at };
+    });
     res.json({ items, activeSessions: 124 });
 });
 router.get('/waste-items', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    res.json(db.prepare('SELECT category, description, count, severity FROM waste_items ORDER BY count DESC').all());
+    res.json([...db_1.store.waste_items]
+        .sort((a, b) => b.count - a.count)
+        .map(w => ({ category: w.category, description: w.description, count: w.count, severity: w.severity })));
 });
 router.get('/insights', (_req, res) => {
-    const db = (0, db_1.getDb)();
-    res.json(db.prepare('SELECT type, title, description, icon FROM insights').all());
+    res.json(db_1.store.insights.map(i => ({ type: i.type, title: i.title, description: i.description, icon: i.icon })));
 });
 exports.default = router;

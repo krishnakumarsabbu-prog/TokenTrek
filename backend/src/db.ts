@@ -1,104 +1,39 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+// In-memory data store replacing better-sqlite3
 
-const DB_PATH = path.join(__dirname, '..', 'tokentrek.db');
+export interface Platform { id: number; name: string; color: string; icon: string }
+export interface Team { id: number; name: string }
+export interface Developer { id: number; name: string; avatar: string; team_id: number }
+export interface DailyStat { id: number; date: string; platform_id: number; requests: number; tokens: number; cost: number }
+export interface Prompt { id: number; prompt_text: string; uses: number; success_rate: number; avg_tokens: number }
+export interface DeveloperScore { id: number; developer_id: number; score: number; trend: number; period: string }
+export interface TeamCost { id: number; team_id: number; cost: number; change_pct: number; period: string }
+export interface ModelCost { id: number; model_name: string; cost: number; pct: number; period: string }
+export interface LiveActivity { id: number; developer_id: number; action: string; platform_id: number; created_at: string }
+export interface WasteItem { id: number; category: string; description: string; count: number; severity: string }
+export interface Insight { id: number; type: string; title: string; description: string; icon: string }
 
-let db: Database.Database;
-
-export function getDb(): Database.Database {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initSchema();
-  }
-  return db;
-}
-
-function initSchema() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS platforms (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      color TEXT NOT NULL,
-      icon TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS teams (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE
-    );
-
-    CREATE TABLE IF NOT EXISTS developers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      avatar TEXT,
-      team_id INTEGER REFERENCES teams(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS daily_stats (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      platform_id INTEGER REFERENCES platforms(id),
-      requests INTEGER DEFAULT 0,
-      tokens INTEGER DEFAULT 0,
-      cost REAL DEFAULT 0
-    );
-
-    CREATE TABLE IF NOT EXISTS prompts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      prompt_text TEXT NOT NULL,
-      uses INTEGER DEFAULT 0,
-      success_rate REAL DEFAULT 0,
-      avg_tokens INTEGER DEFAULT 0
-    );
-
-    CREATE TABLE IF NOT EXISTS developer_scores (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      developer_id INTEGER REFERENCES developers(id),
-      score INTEGER DEFAULT 0,
-      trend INTEGER DEFAULT 0,
-      period TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS team_costs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      team_id INTEGER REFERENCES teams(id),
-      cost REAL DEFAULT 0,
-      change_pct REAL DEFAULT 0,
-      period TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS model_costs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      model_name TEXT NOT NULL,
-      cost REAL DEFAULT 0,
-      pct REAL DEFAULT 0,
-      period TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS live_activity (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      developer_id INTEGER REFERENCES developers(id),
-      action TEXT NOT NULL,
-      platform_id INTEGER REFERENCES platforms(id),
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS waste_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category TEXT NOT NULL,
-      description TEXT NOT NULL,
-      count INTEGER DEFAULT 0,
-      severity TEXT DEFAULT 'medium'
-    );
-
-    CREATE TABLE IF NOT EXISTS insights (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      icon TEXT NOT NULL
-    );
-  `);
-}
+export const store: {
+  platforms: Platform[];
+  teams: Team[];
+  developers: Developer[];
+  daily_stats: DailyStat[];
+  prompts: Prompt[];
+  developer_scores: DeveloperScore[];
+  team_costs: TeamCost[];
+  model_costs: ModelCost[];
+  live_activity: LiveActivity[];
+  waste_items: WasteItem[];
+  insights: Insight[];
+} = {
+  platforms: [],
+  teams: [],
+  developers: [],
+  daily_stats: [],
+  prompts: [],
+  developer_scores: [],
+  team_costs: [],
+  model_costs: [],
+  live_activity: [],
+  waste_items: [],
+  insights: [],
+};
