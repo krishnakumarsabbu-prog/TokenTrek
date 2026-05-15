@@ -36,6 +36,11 @@ export async function generateDemo(): Promise<void> {
   await api.post('/data/generate-demo');
 }
 
+export async function generateLarge(): Promise<{ total: number }> {
+  const { data } = await api.post('/data/generate-large');
+  return data;
+}
+
 export async function fetchImportHistory(): Promise<ImportRecord[]> {
   const { data } = await api.get('/data/import-history');
   return data;

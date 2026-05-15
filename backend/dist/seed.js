@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PROJECTS = exports.MODELS = exports.TEAMS = exports.PLATFORMS = void 0;
 exports.seed = seed;
+exports.seedLarge = seedLarge;
 const db_1 = require("./db");
 // ─── helpers ────────────────────────────────────────────────────────────────
 function randInt(min, max) {
@@ -15,7 +17,6 @@ function pick(arr) {
 function isoOffset(msAgo) {
     return new Date(Date.now() - msAgo).toISOString();
 }
-// Weighted random: weights must sum to 1
 function weightedPick(items, weights) {
     const r = Math.random();
     let acc = 0;
@@ -27,28 +28,33 @@ function weightedPick(items, weights) {
     return items[items.length - 1];
 }
 // ─── static reference data ───────────────────────────────────────────────────
-const PLATFORMS = [
+exports.PLATFORMS = [
     { id: 1, name: 'GitHub Copilot', color: '#0078d4', icon: 'github' },
     { id: 2, name: 'Cursor', color: '#00b4d8', icon: 'cursor' },
     { id: 3, name: 'Claude', color: '#e07b39', icon: 'claude' },
     { id: 4, name: 'Devin', color: '#2563eb', icon: 'devin' },
     { id: 5, name: 'Custom Tool', color: '#10b981', icon: 'tools' },
 ];
-const TEAMS = [
+exports.TEAMS = [
     { id: 1, name: 'Digital Notification' },
     { id: 2, name: 'IDPF' },
     { id: 3, name: 'SIMS' },
     { id: 4, name: 'CMS' },
+    { id: 5, name: 'Platform Engineering' },
+    { id: 6, name: 'DevOps' },
+    { id: 7, name: 'Frontend UI' },
+    { id: 8, name: 'Data & Analytics' },
+    { id: 9, name: 'Security & Compliance' },
+    { id: 10, name: 'Mobile Development' },
 ];
-// Core developer list (will be extended to cover 5000 records)
 const CORE_DEVELOPERS = [
     { baseName: 'Krishna Sabbu', teamId: 1 },
-    { baseName: 'Chandra', teamId: 2 },
     { baseName: 'Padma', teamId: 3 },
-    { baseName: 'Ramya', teamId: 4 },
+    { baseName: 'Chandra', teamId: 2 },
     { baseName: 'Sarath', teamId: 1 },
+    { baseName: 'Ramya', teamId: 4 },
 ];
-const MODELS = [
+exports.MODELS = [
     'GPT-4o',
     'Claude 3.5 Sonnet',
     'GPT-4 Turbo',
@@ -59,11 +65,12 @@ const MODELS = [
     'Llama 3.1 70B',
 ];
 const MODEL_WEIGHTS = [0.22, 0.20, 0.14, 0.12, 0.10, 0.09, 0.08, 0.05];
-const PROJECTS = [
+exports.PROJECTS = [
     'Auth Service', 'Notification Engine', 'Payment Gateway', 'User Portal',
     'Report Builder', 'Data Pipeline', 'API Gateway', 'Mobile Backend',
     'Admin Dashboard', 'Search Service', 'Workflow Automation', 'Compliance Tracker',
     'Identity Provider', 'Claims Management', 'Document Store', 'Event Bus',
+    'Analytics Engine', 'Billing Service', 'Customer Portal', 'Fraud Detection',
 ];
 const PROMPT_TEMPLATES = [
     'Explain this code snippet in {project}',
@@ -86,6 +93,11 @@ const PROMPT_TEMPLATES = [
     'Translate Python to TypeScript for {project}',
     'Identify security vulnerabilities in {project}',
     'Create CI/CD pipeline config for {project}',
+    'Explain architecture decisions for {project}',
+    'Write deployment script for {project}',
+    'Generate OpenAPI spec for {project}',
+    'Add caching layer to {project}',
+    'Review database schema for {project}',
 ];
 const ACTIONS = [
     'Used GitHub Copilot for autocomplete',
@@ -103,6 +115,15 @@ const ACTIONS = [
     'Drafted release notes with Claude',
     'Scaffolded microservice with Cursor',
     'Generated test fixtures with Custom Tool',
+    'Optimized SQL query using Copilot',
+    'Wrote Terraform config with Cursor',
+    'Explained system design with Claude',
+    'Auto-fixed lint errors via Devin',
+    'Built CI workflow with Custom Tool',
+];
+const CATEGORIES = [
+    'backend', 'frontend', 'devops', 'testing', 'security',
+    'data', 'mobile', 'documentation', 'refactoring', 'architecture',
 ];
 const WASTE_CATEGORIES = [
     { category: 'efficiency', description: 'High token, low success prompts', severity: 'high' },
@@ -110,7 +131,7 @@ const WASTE_CATEGORIES = [
     { category: 'cost', description: 'Overused expensive models for simple tasks', severity: 'high' },
     { category: 'optimization', description: 'Inefficient long prompts', severity: 'low' },
     { category: 'idle', description: 'Sessions opened but never completed', severity: 'medium' },
-    { category: 'hallucination', 'description': 'Prompts with frequent re-asks', severity: 'high' },
+    { category: 'hallucination', description: 'Prompts with frequent re-asks', severity: 'high' },
 ];
 const INSIGHT_TEMPLATES = [
     { type: 'cost', title: 'Cost Optimization', icon: 'dollar', description: '{team} is spending {pct}% more than the weekly average.' },
@@ -128,30 +149,21 @@ function generateDateRange(days) {
     }
     return dates;
 }
-// ─── main seed ────────────────────────────────────────────────────────────────
-function seed() {
-    if (db_1.store.platforms.length > 0)
-        return;
-    // ── platforms ──
-    db_1.store.platforms.push(...PLATFORMS);
-    // ── teams ──
-    db_1.store.teams.push(...TEAMS);
-    // ── developers (50 to distribute 5000 records realistically) ──
+// ─── developer pool builder ───────────────────────────────────────────────────
+function buildDeveloperPool(teams) {
     const developerPool = [];
-    // First, add the 5 named developers
     CORE_DEVELOPERS.forEach((d, i) => {
         const initials = d.baseName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
         developerPool.push({ id: i + 1, name: d.baseName, avatar: initials, team_id: d.teamId });
     });
-    // Extend to 50 developers cycling through teams for realistic distribution
     const extraFirstNames = [
         'Arjun', 'Divya', 'Vikram', 'Pooja', 'Rahul', 'Sneha', 'Aditya', 'Meera',
         'Kiran', 'Kavya', 'Suresh', 'Lakshmi', 'Ravi', 'Ananya', 'Mohan',
         'Priya', 'Sanjay', 'Nisha', 'Amit', 'Deepa', 'Gopal', 'Hema',
         'Ishaan', 'Jyothi', 'Karthik', 'Lalitha', 'Manish', 'Nandita',
         'Omkar', 'Pavan', 'Qasim', 'Rekha', 'Shiva', 'Tarini', 'Uday',
-        'Vanitha', 'Wasim', 'Xena', 'Yashwant', 'Zara', 'Balaji', 'Chitra',
-        'Darshan', 'Eswari', 'Farhan',
+        'Vanitha', 'Wasim', 'Yashwant', 'Zara', 'Balaji', 'Chitra',
+        'Darshan', 'Eswari', 'Farhan', 'Ganesh',
     ];
     const extraLastNames = [
         'Rao', 'Reddy', 'Kumar', 'Naidu', 'Sharma', 'Verma', 'Gupta', 'Patel',
@@ -162,13 +174,48 @@ function seed() {
         const lastName = extraLastNames[i % extraLastNames.length];
         const fullName = `${firstName} ${lastName}`;
         const initials = `${firstName[0]}${lastName[0]}`;
-        const teamId = TEAMS[i % TEAMS.length].id;
+        const teamId = teams[i % teams.length].id;
         developerPool.push({ id: i + 6, name: fullName, avatar: initials, team_id: teamId });
     }
+    return developerPool;
+}
+// ─── main seed (original ~5800 records) ──────────────────────────────────────
+function seed() {
+    if (db_1.store.platforms.length > 0)
+        return;
+    populateStore(exports.TEAMS.slice(0, 4), 90, 300, 4200);
+}
+// ─── large seed (~10 000 records) ─────────────────────────────────────────────
+function seedLarge() {
+    // Clear everything first
+    clearStore();
+    // More days × more platforms × more prompts × more activity = ~10 000
+    populateStore(exports.TEAMS, 180, 500, 8000);
+}
+// ─── shared population logic ──────────────────────────────────────────────────
+function clearStore() {
+    db_1.store.platforms.length = 0;
+    db_1.store.teams.length = 0;
+    db_1.store.developers.length = 0;
+    db_1.store.daily_stats.length = 0;
+    db_1.store.prompts.length = 0;
+    db_1.store.developer_scores.length = 0;
+    db_1.store.team_costs.length = 0;
+    db_1.store.model_costs.length = 0;
+    db_1.store.live_activity.length = 0;
+    db_1.store.waste_items.length = 0;
+    db_1.store.insights.length = 0;
+}
+function populateStore(teams, days, promptCount, activityCount) {
+    // ── platforms ──
+    db_1.store.platforms.push(...exports.PLATFORMS);
+    // ── teams ──
+    db_1.store.teams.push(...teams);
+    // ── developers ──
+    const developerPool = buildDeveloperPool(teams);
     db_1.store.developers.push(...developerPool);
-    // ── daily_stats — 90 days × 5 platforms = 450 rows ──
-    const dates = generateDateRange(90);
-    // Base traffic per platform (requests, tokens, cost) — grows over time
+    // ── daily_stats ──
+    const dates = generateDateRange(days);
     const platformBase = [
         { pid: 1, req: 320000, tok: 450000, cost: 8200 },
         { pid: 2, req: 180000, tok: 250000, cost: 4600 },
@@ -178,7 +225,7 @@ function seed() {
     ];
     let statId = 1;
     dates.forEach((date, dayIdx) => {
-        const growthFactor = 1 + dayIdx * 0.008; // ~72% growth over 90 days
+        const growthFactor = 1 + dayIdx * 0.004;
         platformBase.forEach(pb => {
             const weekendDip = [0, 6].includes(new Date(date).getDay()) ? 0.65 : 1;
             const noise = randFloat(0.88, 1.12);
@@ -192,11 +239,11 @@ function seed() {
             });
         });
     });
-    // ── prompts — 300 realistic records ──
+    // ── prompts ──
     let promptId = 1;
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < promptCount; i++) {
         const template = PROMPT_TEMPLATES[i % PROMPT_TEMPLATES.length];
-        const project = pick(PROJECTS);
+        const project = pick(exports.PROJECTS);
         const text = template.replace('{project}', project);
         db_1.store.prompts.push({
             id: promptId++,
@@ -206,7 +253,7 @@ function seed() {
             avg_tokens: randInt(400, 3500),
         });
     }
-    // ── developer_scores — one score per developer ──
+    // ── developer_scores ──
     developerPool.forEach((dev, i) => {
         db_1.store.developer_scores.push({
             id: i + 1,
@@ -216,8 +263,8 @@ function seed() {
             period: dates[dates.length - 7] + ' - ' + dates[dates.length - 1],
         });
     });
-    // ── team_costs — one cost entry per team ──
-    TEAMS.forEach((team, i) => {
+    // ── team_costs ──
+    teams.forEach((team, i) => {
         db_1.store.team_costs.push({
             id: i + 1,
             team_id: team.id,
@@ -226,9 +273,9 @@ function seed() {
             period: dates[dates.length - 7] + ' - ' + dates[dates.length - 1],
         });
     });
-    // ── model_costs — one entry per model ──
+    // ── model_costs ──
     let totalModelCost = 0;
-    const rawModelCosts = MODELS.map((name, i) => {
+    const rawModelCosts = exports.MODELS.map((name, i) => {
         const c = randInt(5000, 65000) * (MODEL_WEIGHTS[i] / MODEL_WEIGHTS[0]);
         totalModelCost += c;
         return { name, cost: Math.round(c) };
@@ -242,12 +289,12 @@ function seed() {
             period: dates[dates.length - 7] + ' - ' + dates[dates.length - 1],
         });
     });
-    // ── live_activity — 4200 records spread across last 30 days ──
-    const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000;
-    for (let i = 0; i < 4200; i++) {
+    // ── live_activity ──
+    const MS_RANGE = days * 24 * 60 * 60 * 1000;
+    for (let i = 0; i < activityCount; i++) {
         const dev = developerPool[i % developerPool.length];
-        const platform = weightedPick(PLATFORMS, [0.35, 0.25, 0.20, 0.10, 0.10]);
-        const msAgo = randInt(0, MS_30_DAYS);
+        const platform = weightedPick(exports.PLATFORMS, [0.35, 0.25, 0.20, 0.10, 0.10]);
+        const msAgo = randInt(0, MS_RANGE);
         db_1.store.live_activity.push({
             id: i + 1,
             developer_id: dev.id,
@@ -256,7 +303,7 @@ function seed() {
             created_at: isoOffset(msAgo),
         });
     }
-    // ── waste_items — one entry per waste category with realistic counts ──
+    // ── waste_items ──
     WASTE_CATEGORIES.forEach((w, i) => {
         db_1.store.waste_items.push({
             id: i + 1,
@@ -268,7 +315,7 @@ function seed() {
     });
     // ── insights ──
     INSIGHT_TEMPLATES.forEach((tmpl, i) => {
-        const team = pick(TEAMS).name;
+        const team = pick(teams).name;
         const description = tmpl.description
             .replace('{team}', team)
             .replace('{pct}', randInt(15, 45).toString())
@@ -284,26 +331,20 @@ function seed() {
             icon: tmpl.icon,
         });
     });
-    // ─── summary ──────────────────────────────────────────────────────────────
-    const total = db_1.store.daily_stats.length +
-        db_1.store.prompts.length +
-        db_1.store.live_activity.length +
-        db_1.store.developers.length +
-        db_1.store.developer_scores.length +
-        db_1.store.team_costs.length +
-        db_1.store.model_costs.length +
-        db_1.store.waste_items.length +
-        db_1.store.insights.length;
+    const total = db_1.store.daily_stats.length + db_1.store.prompts.length + db_1.store.live_activity.length +
+        db_1.store.developers.length + db_1.store.developer_scores.length + db_1.store.team_costs.length +
+        db_1.store.model_costs.length + db_1.store.waste_items.length + db_1.store.insights.length;
     console.log(`[TokenTrek] Seed complete — ${total} records loaded into memory.`);
-    console.log(`  platforms:         ${db_1.store.platforms.length}`);
-    console.log(`  teams:             ${db_1.store.teams.length}`);
-    console.log(`  developers:        ${db_1.store.developers.length}`);
-    console.log(`  daily_stats:       ${db_1.store.daily_stats.length}`);
-    console.log(`  prompts:           ${db_1.store.prompts.length}`);
-    console.log(`  developer_scores:  ${db_1.store.developer_scores.length}`);
-    console.log(`  team_costs:        ${db_1.store.team_costs.length}`);
-    console.log(`  model_costs:       ${db_1.store.model_costs.length}`);
-    console.log(`  live_activity:     ${db_1.store.live_activity.length}`);
-    console.log(`  waste_items:       ${db_1.store.waste_items.length}`);
-    console.log(`  insights:          ${db_1.store.insights.length}`);
+    console.log(`  platforms:        ${db_1.store.platforms.length}`);
+    console.log(`  teams:            ${db_1.store.teams.length}`);
+    console.log(`  developers:       ${db_1.store.developers.length}`);
+    console.log(`  daily_stats:      ${db_1.store.daily_stats.length}  (${days} days × 5 platforms)`);
+    console.log(`  prompts:          ${db_1.store.prompts.length}`);
+    console.log(`  developer_scores: ${db_1.store.developer_scores.length}`);
+    console.log(`  team_costs:       ${db_1.store.team_costs.length}`);
+    console.log(`  model_costs:      ${db_1.store.model_costs.length}`);
+    console.log(`  live_activity:    ${db_1.store.live_activity.length}`);
+    console.log(`  waste_items:      ${db_1.store.waste_items.length}`);
+    console.log(`  insights:         ${db_1.store.insights.length}`);
+    console.log(`  TOTAL:            ${total}`);
 }

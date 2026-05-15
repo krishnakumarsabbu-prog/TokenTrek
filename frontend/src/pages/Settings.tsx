@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CheckCircle, XCircle, ChevronDown, ChevronUp, FileSpreadsheet, AlertTriangle, Sparkles, Bell, Shield, Users, Cpu } from 'lucide-react';
-import { importData, resetDatabase, generateDemo, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
+import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CircleCheck as CheckCircle, Circle as XCircle, ChevronDown, ChevronUp, FileSpreadsheet, TriangleAlert as AlertTriangle, Sparkles, Bell, Shield, Users, Cpu, Zap } from 'lucide-react';
+import { importData, resetDatabase, generateDemo, generateLarge, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
 import { SectionCard, Badge, Tabs } from '../components/ui';
 
 type Tab = 'data' | 'notifications' | 'security' | 'team' | 'models';
@@ -51,6 +51,11 @@ export default function Settings() {
 
   const demoMutation = useMutation({
     mutationFn: generateDemo,
+    onSuccess: () => qc.invalidateQueries(),
+  });
+
+  const largeMutation = useMutation({
+    mutationFn: generateLarge,
     onSuccess: () => qc.invalidateQueries(),
   });
 
@@ -176,17 +181,33 @@ export default function Settings() {
 
               {/* Actions */}
               <SectionCard title="Data Actions">
-                <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
                       <Sparkles size={18} className="text-emerald-600" />
                     </div>
                     <p className="text-sm font-semibold text-gray-800 mb-1">Generate Demo Data</p>
                     <p className="text-xs text-gray-400 mb-3">Populate with realistic sample data for testing</p>
-                    <button onClick={() => demoMutation.mutate()} disabled={demoMutation.isPending}
+                    <button onClick={() => demoMutation.mutate()} disabled={demoMutation.isPending || largeMutation.isPending}
                       className="w-full py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5">
                       {demoMutation.isPending ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />}
                       Generate
+                    </button>
+                  </div>
+                  <div className="p-4 border border-blue-100 rounded-xl hover:border-blue-300 transition-colors bg-blue-50/20">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
+                      <Zap size={18} className="text-blue-600" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">Generate Demo Data</p>
+                    <p className="text-xs font-semibold text-blue-600 mb-0.5">10,000 Records</p>
+                    <p className="text-xs text-gray-400 mb-3">50 devs · 10 teams · 20 projects · 5 platforms · 8 models</p>
+                    <button
+                      onClick={() => largeMutation.mutate()}
+                      disabled={largeMutation.isPending || demoMutation.isPending}
+                      className="w-full py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      {largeMutation.isPending ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                      {largeMutation.isPending ? 'Generating…' : largeMutation.isSuccess ? `Done — ${largeMutation.data?.total?.toLocaleString()} records` : 'Generate 10K'}
                     </button>
                   </div>
                   <div className="p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">

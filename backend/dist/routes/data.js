@@ -141,6 +141,14 @@ router.post('/generate-demo', (_req, res) => {
     (0, seed_1.seed)();
     res.json({ success: true });
 });
+// POST /api/data/generate-large — seeds ~10 000 records
+router.post('/generate-large', (_req, res) => {
+    (0, seed_1.seedLarge)();
+    const total = db_1.store.daily_stats.length + db_1.store.prompts.length + db_1.store.live_activity.length +
+        db_1.store.developers.length + db_1.store.developer_scores.length + db_1.store.team_costs.length +
+        db_1.store.model_costs.length + db_1.store.waste_items.length + db_1.store.insights.length;
+    res.json({ success: true, total });
+});
 // GET /api/data/import-history
 router.get('/import-history', (_req, res) => {
     res.json(db_1.store.import_history);

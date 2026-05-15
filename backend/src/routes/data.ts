@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { store, ImportRecord } from '../db';
-import { seed } from '../seed';
+import { seed, seedLarge } from '../seed';
 
 const router = Router();
 
@@ -145,6 +145,16 @@ router.post('/generate-demo', (_req, res) => {
   store.insights.length = 0;
   seed();
   res.json({ success: true });
+});
+
+// POST /api/data/generate-large — seeds ~10 000 records
+router.post('/generate-large', (_req, res) => {
+  seedLarge();
+  const total =
+    store.daily_stats.length + store.prompts.length + store.live_activity.length +
+    store.developers.length + store.developer_scores.length + store.team_costs.length +
+    store.model_costs.length + store.waste_items.length + store.insights.length;
+  res.json({ success: true, total });
 });
 
 // GET /api/data/import-history
