@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 import UploadCenter from './pages/UploadCenter';
 import AILeague from './pages/AILeague';
 import DeveloperXP from './pages/DeveloperXP';
+import TeamBattleBoard from './pages/TeamBattleBoard';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="upload" element={<UploadCenter />} />
           <Route path="developers" element={<Developers />} />
           <Route path="teams" element={<Teams />} />
+          <Route path="team-battle" element={<TeamBattleBoard />} />
           <Route path="league" element={<AILeague />} />
           <Route path="developer-xp" element={<DeveloperXP />} />
           <Route path="prompt-analytics" element={<PromptAnalytics />} />
