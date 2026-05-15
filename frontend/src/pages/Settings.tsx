@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CircleCheck as CheckCircle, Circle as XCircle, ChevronDown, ChevronUp, FileSpreadsheet, TriangleAlert as AlertTriangle, Sparkles, Bell, Shield, Users, Cpu, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, Upload, Download, RefreshCw, Trash2, Database, CheckCircle, XCircle, ChevronDown, ChevronUp, FileSpreadsheet, AlertTriangle, Sparkles, Bell, Shield, Users, Cpu, Zap } from 'lucide-react';
 import { importData, resetDatabase, generateDemo, generateLarge, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
 import { SectionCard, Badge, Tabs } from '../components/ui';
 

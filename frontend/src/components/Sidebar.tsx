@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, Play as PlayCircle, FileText, Settings, Circle as HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap, Swords } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, PlayCircle, FileText, Settings, HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap, Swords } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const NAV_GROUPS = [

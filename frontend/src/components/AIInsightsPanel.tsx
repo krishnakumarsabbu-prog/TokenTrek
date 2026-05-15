@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, ChevronDown, ChevronUp, TrendingUp, TrendingDown, DollarSign, Zap, TriangleAlert as AlertTriangle, ChartBar as BarChart2, Repeat2, ArrowRightLeft, Eye, Lightbulb, RefreshCw } from 'lucide-react';
+import { Sparkles, X, ChevronDown, ChevronUp, TrendingUp, TrendingDown, DollarSign, Zap, AlertTriangle, BarChart2, Repeat2, ArrowRightLeft, Eye, Lightbulb, RefreshCw } from 'lucide-react';
 import { fetchAIInsights, type AIInsight, type InsightCategory } from '../api/insights';
 import { LivePulse } from './ui';
 
