@@ -1,22 +1,44 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { Loader as Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { staggerItem } from '../lib/animations';
+
+// ─── Shimmer ──────────────────────────────────────────────────────────────────
+
+export function Shimmer({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`rounded-lg overflow-hidden relative ${className}`}
+      style={{ background: '#edf1f5' }}
+    >
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
+        }}
+        animate={{ x: ['-100%', '100%'] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
+      />
+    </div>
+  );
+}
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg ${className}`} style={{ background: '#edf1f5' }} />;
+  return <Shimmer className={className} />;
 }
 
 export function CardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border p-5 animate-pulse" style={{ borderColor: '#e5eaf0' }}>
+    <div className="bg-white rounded-xl border p-5" style={{ borderColor: '#e5eaf0' }}>
       <div className="flex items-start justify-between mb-4">
-        <Skeleton className="w-10 h-10 rounded-xl" />
-        <Skeleton className="w-14 h-5 rounded-md" />
+        <Shimmer className="w-10 h-10 rounded-xl" />
+        <Shimmer className="w-14 h-5 rounded-md" />
       </div>
-      <Skeleton className="h-7 w-28 mb-1.5" />
-      <Skeleton className="h-3 w-20 mb-1" />
-      <Skeleton className="h-3 w-16" />
+      <Shimmer className="h-7 w-28 mb-2" />
+      <Shimmer className="h-3 w-20 mb-1.5" />
+      <Shimmer className="h-3 w-16" />
     </div>
   );
 }
@@ -25,14 +47,14 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex gap-4 py-3.5 px-5 border-b animate-pulse" style={{ borderColor: '#f0f4f8' }}>
-          <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
+        <div key={i} className="flex gap-4 py-3.5 px-5 border-b" style={{ borderColor: '#f0f4f8' }}>
+          <Shimmer className="h-8 w-8 rounded-lg flex-shrink-0" />
           <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-3.5 w-3/5" />
-            <Skeleton className="h-3 w-2/5" />
+            <Shimmer className="h-3.5 w-3/5" />
+            <Shimmer className="h-3 w-2/5" />
           </div>
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-14" />
+          <Shimmer className="h-4 w-16" />
+          <Shimmer className="h-4 w-14" />
         </div>
       ))}
     </div>
@@ -41,9 +63,16 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function ChartSkeleton({ height = 200 }: { height?: number }) {
   return (
-    <div className="animate-pulse flex items-end gap-2 px-4 pt-4" style={{ height }}>
+    <div className="flex items-end gap-2 px-4 pt-4" style={{ height }}>
       {[55, 75, 45, 85, 65, 90, 50, 70, 80, 60].map((h, i) => (
-        <div key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: '#edf1f5' }} />
+        <div key={i} className="flex-1 rounded-t overflow-hidden relative" style={{ height: `${h}%`, background: '#edf1f5' }}>
+          <motion.div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)' }}
+            animate={{ x: ['-100%', '100%'] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'linear', delay: i * 0.1 }}
+          />
+        </div>
       ))}
     </div>
   );
@@ -75,16 +104,26 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: '#f0f4f8', color: '#c5d4e0' }}>
+    <motion.div
+      className="flex flex-col items-center justify-center py-20 gap-3 text-center"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <motion.div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center"
+        style={{ background: '#f0f4f8', color: '#c5d4e0' }}
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      >
         {icon}
-      </div>
+      </motion.div>
       <div>
         <p className="text-sm font-semibold" style={{ color: '#4a6480' }}>{title}</p>
         {description && <p className="text-xs mt-1 max-w-xs" style={{ color: '#8ba3be' }}>{description}</p>}
       </div>
       {action && <div className="mt-2">{action}</div>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -138,14 +177,16 @@ export function Pagination({ page, totalPages, onPage, totalItems, pageSize }: P
         </p>
       ) : <div />}
       <div className="flex items-center gap-1">
-        <button
+        <motion.button
           onClick={() => onPage(page - 1)}
           disabled={page === 1}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ borderColor: '#e5eaf0', color: '#4a6480' }}
+          whileHover={{ background: '#f0f4f8' }}
+          whileTap={{ scale: 0.92 }}
         >
           <ChevronLeft size={13} />
-        </button>
+        </motion.button>
         {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
           let p = i + 1;
           if (totalPages > 7) {
@@ -154,27 +195,31 @@ export function Pagination({ page, totalPages, onPage, totalItems, pageSize }: P
             else p = page - 3 + i;
           }
           return (
-            <button
+            <motion.button
               key={p}
               onClick={() => onPage(p)}
-              className="min-w-[28px] h-7 px-1.5 text-xs rounded-lg font-medium transition-colors border"
+              className="min-w-[28px] h-7 px-1.5 text-xs rounded-lg font-medium border"
               style={p === page
                 ? { background: '#0078d4', color: 'white', borderColor: '#0078d4' }
                 : { color: '#4a6480', borderColor: '#e5eaf0', background: 'white' }
               }
+              whileHover={p !== page ? { background: '#f0f4f8' } : {}}
+              whileTap={{ scale: 0.92 }}
             >
               {p}
-            </button>
+            </motion.button>
           );
         })}
-        <button
+        <motion.button
           onClick={() => onPage(page + 1)}
           disabled={page === totalPages}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ borderColor: '#e5eaf0', color: '#4a6480' }}
+          whileHover={{ background: '#f0f4f8' }}
+          whileTap={{ scale: 0.92 }}
         >
           <ChevronRight size={13} />
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -262,7 +307,7 @@ const AVATAR_GRADIENTS = [
 
 export function Avatar({ initials, size = 32, index = 0 }: { initials: string; size?: number; index?: number }) {
   return (
-    <div
+    <motion.div
       className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
       style={{
         width: size,
@@ -271,23 +316,59 @@ export function Avatar({ initials, size = 32, index = 0 }: { initials: string; s
         fontSize: size * 0.34,
         letterSpacing: '0.02em',
       }}
+      whileHover={{ scale: 1.1 }}
+      transition={{ duration: 0.2 }}
     >
       {initials}
-    </div>
+    </motion.div>
   );
+}
+
+// ─── Animated Counter ─────────────────────────────────────────────────────────
+
+function useAnimatedNumber(target: number, duration = 1.2) {
+  const [display, setDisplay] = useState(0);
+  const raf = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
+  const startValRef = useRef(0);
+
+  useEffect(() => {
+    if (target === 0) { setDisplay(0); return; }
+    startRef.current = null;
+    startValRef.current = display;
+
+    const animate = (ts: number) => {
+      if (!startRef.current) startRef.current = ts;
+      const elapsed = (ts - startRef.current) / 1000;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setDisplay(Math.round(startValRef.current + (target - startValRef.current) * eased));
+      if (progress < 1) raf.current = requestAnimationFrame(animate);
+    };
+
+    raf.current = requestAnimationFrame(animate);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
+
+  return display;
 }
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
-export function ProgressBar({ value, max = 100, color = '#0078d4', className = '' }: {
-  value: number; max?: number; color?: string; className?: string;
+export function ProgressBar({ value, max = 100, color = '#0078d4', className = '', animate: doAnimate = true }: {
+  value: number; max?: number; color?: string; className?: string; animate?: boolean;
 }) {
   const pct = Math.min(100, (value / max) * 100);
   return (
     <div className={`h-1.5 rounded-full overflow-hidden ${className}`} style={{ background: '#edf1f5' }}>
-      <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${pct}%`, background: color }}
+      <motion.div
+        className="h-full rounded-full"
+        style={{ background: color }}
+        initial={doAnimate ? { width: 0 } : { width: `${pct}%` }}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
       />
     </div>
   );
@@ -299,7 +380,12 @@ export function MiniStat({ label, value, change, color = '#0078d4' }: {
   label: string; value: string; change?: number; color?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border p-4" style={{ borderColor: '#e5eaf0' }}>
+    <motion.div
+      className="bg-white rounded-xl border p-4"
+      style={{ borderColor: '#e5eaf0' }}
+      whileHover={{ y: -2, boxShadow: '0 4px 16px rgba(0,30,60,0.1)' }}
+      transition={{ duration: 0.2 }}
+    >
       <p className="text-xs mb-1" style={{ color: '#8ba3be' }}>{label}</p>
       <p className="text-xl font-bold mb-1" style={{ color }}>{value}</p>
       {change !== undefined && (
@@ -308,7 +394,7 @@ export function MiniStat({ label, value, change, color = '#0078d4' }: {
           <span className="text-xs" style={{ color: '#8ba3be' }}>vs last week</span>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -330,9 +416,13 @@ export function SectionCard({
   noPadding?: boolean;
 }) {
   return (
-    <div
-      className={`bg-white rounded-xl border overflow-hidden transition-shadow duration-200 ${className}`}
+    <motion.div
+      className={`bg-white rounded-xl border overflow-hidden ${className}`}
       style={{ borderColor: '#e5eaf0', boxShadow: '0 1px 3px rgba(0,30,60,0.05)' }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ boxShadow: '0 4px 20px rgba(0,30,60,0.08)' }}
     >
       {(title || action) && (
         <div
@@ -346,11 +436,21 @@ export function SectionCard({
         </div>
       )}
       {children}
-    </div>
+    </motion.div>
   );
 }
 
 // ─── KpiCard ─────────────────────────────────────────────────────────────────
+
+function parseNumericValue(value: string): { numeric: number; prefix: string; suffix: string } {
+  const match = value.match(/^(\$?)([0-9.]+)([KMBh%]?)$/);
+  if (!match) return { numeric: 0, prefix: '', suffix: '' };
+  return {
+    prefix: match[1] || '',
+    numeric: parseFloat(match[2]),
+    suffix: match[3] || '',
+  };
+}
 
 export function KpiCard({
   label, value, change, icon, iconBg = '#eff6ff', iconColor = '#0078d4', sub,
@@ -363,37 +463,48 @@ export function KpiCard({
   iconColor?: string;
   sub?: string;
 }) {
+  const { numeric, prefix, suffix } = parseNumericValue(value);
+  const animated = useAnimatedNumber(numeric);
+  const displayValue = numeric > 0 ? `${prefix}${animated}${suffix}` : value;
+
   return (
-    <div
-      className="bg-white rounded-xl border p-5 transition-all duration-200 cursor-default group"
+    <motion.div
+      className="bg-white rounded-xl border p-5 cursor-default"
       style={{ borderColor: '#e5eaf0', boxShadow: '0 1px 3px rgba(0,30,60,0.05)' }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,30,60,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,30,60,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+      initial={{ opacity: 0, y: 16, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(0,30,60,0.12)', scale: 1.01 }}
     >
       <div className="flex items-start justify-between mb-3.5">
-        <div
+        <motion.div
           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: iconBg }}
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          transition={{ duration: 0.2 }}
         >
           <span style={{ color: iconColor }}>{icon}</span>
-        </div>
+        </motion.div>
         {change !== undefined && (
-          <div
+          <motion.div
             className="flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-lg"
             style={change >= 0
               ? { background: '#ecfdf5', color: '#059669' }
               : { background: '#fef2f2', color: '#dc2626' }
             }
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.25 }}
           >
             {change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
             {change >= 0 ? '+' : ''}{change}%
-          </div>
+          </motion.div>
         )}
       </div>
-      <p className="text-2xl font-bold mb-0.5 tracking-tight" style={{ color: '#0d1f30' }}>{value}</p>
+      <p className="text-2xl font-bold mb-0.5 tracking-tight" style={{ color: '#0d1f30' }}>{displayValue}</p>
       <p className="text-xs font-medium" style={{ color: '#8ba3be' }}>{label}</p>
       {sub && <p className="text-xs mt-0.5" style={{ color: '#b0c4d4' }}>{sub}</p>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -407,18 +518,18 @@ interface TabsProps {
 
 export function Tabs({ tabs, active, onChange }: TabsProps) {
   return (
-    <div className="flex border-b" style={{ borderColor: '#f0f4f8' }}>
+    <div className="flex border-b relative" style={{ borderColor: '#f0f4f8' }}>
       {tabs.map(t => (
-        <button
+        <motion.button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className="px-4 py-2.5 text-xs font-semibold border-b-2 transition-all duration-150 flex items-center gap-1.5"
+          className="px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 relative"
           style={active === t.id
             ? { borderColor: '#0078d4', color: '#0078d4' }
             : { borderColor: 'transparent', color: '#8ba3be' }
           }
-          onMouseEnter={e => { if (active !== t.id) e.currentTarget.style.color = '#4a6480'; }}
-          onMouseLeave={e => { if (active !== t.id) e.currentTarget.style.color = '#8ba3be'; }}
+          whileHover={{ color: active !== t.id ? '#4a6480' : '#0078d4' }}
+          transition={{ duration: 0.15 }}
         >
           {t.label}
           {t.count !== undefined && (
@@ -429,7 +540,7 @@ export function Tabs({ tabs, active, onChange }: TabsProps) {
               {t.count}
             </span>
           )}
-        </button>
+        </motion.button>
       ))}
     </div>
   );
@@ -439,10 +550,53 @@ export function Tabs({ tabs, active, onChange }: TabsProps) {
 
 export function StatusDot({ active = true }: { active?: boolean }) {
   return (
-    <span
+    <motion.span
       className="inline-block w-2 h-2 rounded-full"
       style={{ background: active ? '#10b981' : '#e5eaf0' }}
+      animate={active ? { scale: [1, 1.3, 1], opacity: [1, 0.7, 1] } : {}}
+      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
     />
+  );
+}
+
+// ─── LivePulse ────────────────────────────────────────────────────────────────
+
+export function LivePulse({ color = '#10b981', size = 8 }: { color?: string; size?: number }) {
+  return (
+    <span className="relative inline-flex" style={{ width: size, height: size }}>
+      <motion.span
+        className="absolute inline-flex rounded-full"
+        style={{ width: size, height: size, background: color, opacity: 0.6 }}
+        animate={{ scale: [1, 2.2, 1], opacity: [0.6, 0, 0.6] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+      />
+      <span
+        className="relative inline-flex rounded-full"
+        style={{ width: size, height: size, background: color }}
+      />
+    </span>
+  );
+}
+
+// ─── AnimatedTableRow ─────────────────────────────────────────────────────────
+
+export function AnimatedTableRow({ children, index = 0, className = '', style = {} }: {
+  children: React.ReactNode;
+  index?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <motion.tr
+      className={className}
+      style={style}
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut', delay: index * 0.04 }}
+      whileHover={{ backgroundColor: '#f7fafd' }}
+    >
+      {children}
+    </motion.tr>
   );
 }
 
@@ -458,9 +612,12 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div
+    <motion.div
       className="flex-shrink-0 bg-white border-b px-6 py-4"
       style={{ borderColor: '#e5eaf0' }}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="flex items-center justify-between">
         <div>
@@ -469,6 +626,101 @@ export function PageHeader({
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-    </div>
+    </motion.div>
+  );
+}
+
+// ─── SlidePanel ───────────────────────────────────────────────────────────────
+
+export function SlidePanel({
+  open,
+  onClose,
+  title,
+  children,
+  width = 400,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  width?: number;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            className="fixed inset-0 z-40"
+            style={{ background: 'rgba(0,15,30,0.4)', backdropFilter: 'blur(2px)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+          />
+          <motion.div
+            className="fixed right-0 top-0 h-full z-50 bg-white shadow-2xl flex flex-col"
+            style={{ width, borderLeft: '1px solid #e5eaf0' }}
+            initial={{ x: width }}
+            animate={{ x: 0 }}
+            exit={{ x: width }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: '#e5eaf0' }}>
+              <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{title}</p>
+              <motion.button
+                onClick={onClose}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
+                style={{ color: '#8ba3be', background: '#f0f4f8' }}
+                whileHover={{ background: '#e5eaf0', color: '#4a6480' }}
+                whileTap={{ scale: 0.9 }}
+              >
+                ✕
+              </motion.button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {children}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── StaggerList ──────────────────────────────────────────────────────────────
+
+export function StaggerList({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.06 } },
+      }}
+    >
+      {React.Children.map(children, (child, i) => (
+        <motion.div key={i} variants={staggerItem}>
+          {child}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+
+// ─── ChartContainer ───────────────────────────────────────────────────────────
+
+export function ChartContainer({ children, height = 200 }: { children: React.ReactNode; height?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scaleY: 0.92 }}
+      animate={{ opacity: 1, scaleY: 1 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      style={{ height, transformOrigin: 'bottom' }}
+    >
+      {children}
+    </motion.div>
   );
 }

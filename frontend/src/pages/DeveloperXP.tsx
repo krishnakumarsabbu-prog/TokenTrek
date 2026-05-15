@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CircleCheck as CheckCircle2, Target, ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CheckCircle2, Target, ChevronUp, ChevronDown, Search } from 'lucide-react';
 import { fetchDeveloperXP } from '../api/analytics';
 import { Avatar, PageHeader, SectionCard, LoadingOverlay, SearchBar, Select, Pagination } from '../components/ui';
 

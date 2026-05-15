@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, TrendingUp, TrendingDown, DollarSign, Users, Zap, Star, Target, Clock, Crown, Swords, ArrowUpRight, ArrowDownRight, ChartBar as BarChart2, Activity } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, DollarSign, Users, Zap, Star, Target, Clock, Crown, Swords, ArrowUpRight, ArrowDownRight, BarChart2, Activity } from 'lucide-react';
 import { SectionCard, PageHeader, KpiCard, ProgressBar, Badge } from '../components/ui';
 import client from '../api/client';
 
