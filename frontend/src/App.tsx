@@ -15,6 +15,7 @@ import UploadCenter from './pages/UploadCenter';
 import AILeague from './pages/AILeague';
 import DeveloperXP from './pages/DeveloperXP';
 import TeamBattleBoard from './pages/TeamBattleBoard';
+import GitStats from './pages/GitStats';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="replay" element={<ReplayCenter />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="git-stats" element={<GitStats />} />
           <Route path="*" element={<Navigate to="/overview" replace />} />
         </Route>
       </Routes>

@@ -1,9 +1,45 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PROJECTS = exports.MODELS = exports.TEAMS = exports.PLATFORMS = void 0;
+exports.loadGitStatsFromCSV = loadGitStatsFromCSV;
 exports.seed = seed;
 exports.seedLarge = seedLarge;
 const db_1 = require("./db");
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 // ─── helpers ────────────────────────────────────────────────────────────────
 function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -179,11 +215,114 @@ function buildDeveloperPool(teams) {
     }
     return developerPool;
 }
+// ─── CSV loading logic ────────────────────────────────────────────────────────
+function parseCSVLine(line) {
+    const row = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        }
+        else if (char === ',' && !inQuotes) {
+            row.push(current.trim());
+            current = '';
+        }
+        else {
+            current += char;
+        }
+    }
+    row.push(current.trim());
+    return row;
+}
+function loadGitStatsFromCSV() {
+    try {
+        const scrumPath = path.resolve(__dirname, '../../data/scrum.csv');
+        if (fs.existsSync(scrumPath)) {
+            const content = fs.readFileSync(scrumPath, 'utf-8');
+            const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+            if (lines.length > 1) {
+                const records = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = parseCSVLine(lines[i]);
+                    if (cols.length < 22)
+                        continue;
+                    records.push({
+                        id: i,
+                        team_name: cols[0],
+                        sprint_report: cols[1],
+                        sprint_start: cols[2],
+                        sprint_end: cols[3],
+                        sprint_month: cols[4],
+                        issue_count: Number(cols[5]) || 0,
+                        issue_delivered: Number(cols[6]) || 0,
+                        points_comm: Number(cols[7]) || 0,
+                        cycle_time_days: Number(cols[8]) || 0,
+                        cycle_time_hrs: Number(cols[9]) || 0,
+                        velocity: Number(cols[10]) || 0,
+                        velocity_rolling_avg: Number(cols[11]) || 0,
+                        stable_velocity: cols[12],
+                        sprints_has_stable_velocity_range: cols[13],
+                        percent_churn: cols[14],
+                        sprints_has_low_churn: cols[15],
+                        predictability: cols[16],
+                        predictability_rolling_avg: cols[17],
+                        sprints_in_optimal_predictability_range: cols[18],
+                        team_delivery_type: cols[19],
+                        l4: cols[20],
+                        l3: cols[21]
+                    });
+                }
+                db_1.store.scrum_records = records;
+                console.log(`[TokenTrek] Loaded ${db_1.store.scrum_records.length} scrum records from CSV`);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Failed to load scrum.csv on startup:', err);
+    }
+    try {
+        const kanbanPath = path.resolve(__dirname, '../../data/kanban.csv');
+        if (fs.existsSync(kanbanPath)) {
+            const content = fs.readFileSync(kanbanPath, 'utf-8');
+            const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+            if (lines.length > 1) {
+                const records = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = parseCSVLine(lines[i]);
+                    if (cols.length < 11)
+                        continue;
+                    records.push({
+                        id: i,
+                        team: cols[0],
+                        month_year: cols[1],
+                        cycle_time: Number(cols[2]) || 0,
+                        lead_time: Number(cols[3]) || 0,
+                        flow_efficiency: Number(cols[4]) || 0,
+                        stability: Number(cols[5]) || 0,
+                        average_throughput: Number(cols[6]) || 0,
+                        average_arrival_rate: Number(cols[7]) || 0,
+                        team_deliver_l4: cols[8],
+                        l3: cols[9],
+                        l2: cols[10]
+                    });
+                }
+                db_1.store.kanban_records = records;
+                console.log(`[TokenTrek] Loaded ${db_1.store.kanban_records.length} kanban records from CSV`);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Failed to load kanban.csv on startup:', err);
+    }
+}
 // ─── main seed (original ~5800 records) ──────────────────────────────────────
 function seed() {
     if (db_1.store.platforms.length > 0)
         return;
     populateStore(exports.TEAMS.slice(0, 4), 90, 300, 4200);
+    loadGitStatsFromCSV();
 }
 // ─── large seed (~10 000 records) ─────────────────────────────────────────────
 function seedLarge() {
@@ -191,6 +330,7 @@ function seedLarge() {
     clearStore();
     // More days × more platforms × more prompts × more activity = ~10 000
     populateStore(exports.TEAMS, 180, 500, 8000);
+    loadGitStatsFromCSV();
 }
 // ─── shared population logic ──────────────────────────────────────────────────
 function clearStore() {
@@ -205,6 +345,8 @@ function clearStore() {
     db_1.store.live_activity.length = 0;
     db_1.store.waste_items.length = 0;
     db_1.store.insights.length = 0;
+    db_1.store.scrum_records.length = 0;
+    db_1.store.kanban_records.length = 0;
 }
 function populateStore(teams, days, promptCount, activityCount) {
     // ── platforms ──

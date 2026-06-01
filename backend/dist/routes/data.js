@@ -11,6 +11,26 @@ const SCHEMAS = {
     teams: { required: ['name'], optional: ['id'] },
     prompts: { required: ['prompt_text', 'uses', 'success_rate', 'avg_tokens'], optional: ['id'] },
     model_costs: { required: ['model_name', 'cost', 'pct'], optional: ['id', 'period'] },
+    scrum_records: {
+        required: [
+            'Team Name', 'Sprint Report', 'SprintStart', 'SprintEnd', 'Sprint Month',
+            'Issue Count', 'Issue Delivered', 'Points Comm', 'Cycle Time (Days)',
+            'Cycle Time (Hrs)', 'Velocity', 'Velocity (Rolling Avg.)', 'Stable Velocity',
+            'Sprints Has Stable Velocity Range (Between 80% to 120%)', 'Percent Churn',
+            'Sprints Has Low Churn', 'Predictability', 'Predictability (Rolling Avg.)',
+            'Sprints In Optimal Predictability Range (Between 80% to 110%)',
+            'Team Delivery Type', 'L4', 'L3'
+        ],
+        optional: []
+    },
+    kanban_records: {
+        required: [
+            'Team', 'Month Year', 'Cycle Time', 'Lead Time', 'Flow Efficiency',
+            'Stability', 'Average Throughput', 'Average Arrival Rate',
+            'Team Deliver L4', 'L3', 'L2'
+        ],
+        optional: []
+    }
 };
 function nextId(arr) {
     return arr.length > 0 ? Math.max(...arr.map(r => r.id)) + 1 : 1;
@@ -80,6 +100,55 @@ function importRows(sheetName, rows) {
             });
         });
     }
+    else if (sheetName === 'scrum_records') {
+        db_1.store.scrum_records = [];
+        rows.forEach((r, idx) => {
+            db_1.store.scrum_records.push({
+                id: idx + 1,
+                team_name: String(r['Team Name'] || r['team_name'] || ''),
+                sprint_report: String(r['Sprint Report'] || r['sprint_report'] || ''),
+                sprint_start: String(r['SprintStart'] || r['sprint_start'] || ''),
+                sprint_end: String(r['SprintEnd'] || r['sprint_end'] || ''),
+                sprint_month: String(r['Sprint Month'] || r['sprint_month'] || ''),
+                issue_count: Number(r['Issue Count'] || r['issue_count']) || 0,
+                issue_delivered: Number(r['Issue Delivered'] || r['issue_delivered']) || 0,
+                points_comm: Number(r['Points Comm'] || r['points_comm']) || 0,
+                cycle_time_days: Number(r['Cycle Time (Days)'] || r['cycle_time_days']) || 0,
+                cycle_time_hrs: Number(r['Cycle Time (Hrs)'] || r['cycle_time_hrs']) || 0,
+                velocity: Number(r['Velocity'] || r['velocity']) || 0,
+                velocity_rolling_avg: Number(r['Velocity (Rolling Avg.)'] || r['velocity_rolling_avg']) || 0,
+                stable_velocity: String(r['Stable Velocity'] || r['stable_velocity'] || ''),
+                sprints_has_stable_velocity_range: String(r['Sprints Has Stable Velocity Range (Between 80% to 120%)'] || r['sprints_has_stable_velocity_range'] || ''),
+                percent_churn: String(r['Percent Churn'] || r['percent_churn'] || ''),
+                sprints_has_low_churn: String(r['Sprints Has Low Churn'] || r['sprints_has_low_churn'] || ''),
+                predictability: String(r['Predictability'] || r['predictability'] || ''),
+                predictability_rolling_avg: String(r['Predictability (Rolling Avg.)'] || r['predictability_rolling_avg'] || ''),
+                sprints_in_optimal_predictability_range: String(r['Sprints In Optimal Predictability Range (Between 80% to 110%)'] || r['sprints_in_optimal_predictability_range'] || ''),
+                team_delivery_type: String(r['Team Delivery Type'] || r['team_delivery_type'] || ''),
+                l4: String(r['L4'] || r['l4'] || ''),
+                l3: String(r['L3'] || r['l3'] || '')
+            });
+        });
+    }
+    else if (sheetName === 'kanban_records') {
+        db_1.store.kanban_records = [];
+        rows.forEach((r, idx) => {
+            db_1.store.kanban_records.push({
+                id: idx + 1,
+                team: String(r['Team'] || r['team'] || ''),
+                month_year: String(r['Month Year'] || r['month_year'] || ''),
+                cycle_time: Number(r['Cycle Time'] || r['cycle_time']) || 0,
+                lead_time: Number(r['Lead Time'] || r['lead_time']) || 0,
+                flow_efficiency: Number(r['Flow Efficiency'] || r['flow_efficiency']) || 0,
+                stability: Number(r['Stability'] || r['stability']) || 0,
+                average_throughput: Number(r['Average Throughput'] || r['average_throughput']) || 0,
+                average_arrival_rate: Number(r['Average Arrival Rate'] || r['average_arrival_rate']) || 0,
+                team_deliver_l4: String(r['Team Deliver L4'] || r['team_deliver_l4'] || ''),
+                l3: String(r['L3'] || r['l3'] || ''),
+                l2: String(r['L2'] || r['l2'] || '')
+            });
+        });
+    }
 }
 // POST /api/data/import — body: { filename, sheets: { sheetName: rows[] }[] }
 router.post('/import', (req, res) => {
@@ -123,6 +192,8 @@ router.post('/reset', (_req, res) => {
     db_1.store.live_activity.length = 0;
     db_1.store.waste_items.length = 0;
     db_1.store.insights.length = 0;
+    db_1.store.scrum_records.length = 0;
+    db_1.store.kanban_records.length = 0;
     res.json({ success: true });
 });
 // POST /api/data/generate-demo — re-seeds demo data
@@ -138,6 +209,8 @@ router.post('/generate-demo', (_req, res) => {
     db_1.store.live_activity.length = 0;
     db_1.store.waste_items.length = 0;
     db_1.store.insights.length = 0;
+    db_1.store.scrum_records.length = 0;
+    db_1.store.kanban_records.length = 0;
     (0, seed_1.seed)();
     res.json({ success: true });
 });
@@ -171,6 +244,8 @@ router.get('/template/:sheet', (req, res) => {
         teams: 'Engineering',
         prompts: 'Explain this code,1000,90,1200',
         model_costs: 'GPT-4o,5000,25.5,Q1 2026',
+        scrum_records: 'Agentic AI L1,BQTZ 2025-01,4/9/25,4/22/25,2025-04,21,5,15,3,9,9,9,100%,Yes,80%,No,60%,60%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge',
+        kanban_records: 'CMS Platform CD,05/24,4.8,33.8,0.14,1.1,17,15,Software Del Virtual Capabilities,Content,Content Management System',
     };
     const example = examples[sheet] || '';
     res.setHeader('Content-Type', 'text/csv');

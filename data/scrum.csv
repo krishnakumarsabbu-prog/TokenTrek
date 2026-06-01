@@ -1,0 +1,45 @@
+Team Name,Sprint Report,SprintStart,SprintEnd,Sprint Month,Issue Count,Issue Delivered,Points Comm,Cycle Time (Days),Cycle Time (Hrs),Velocity,Velocity (Rolling Avg.),Stable Velocity,Sprints Has Stable Velocity Range (Between 80% to 120%),Percent Churn,Sprints Has Low Churn,Predictability,Predictability (Rolling Avg.),Sprints In Optimal Predictability Range (Between 80% to 110%),Team Delivery Type,L4,L3
+Agentic AI L1,BQTZ 2025-01,4/9/25,4/22/25,2025-04,21,5,15,3,9,9,9,100%,Yes,80%,No,60%,60%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-02,4/23/25,5/6/25,2025-05,38,14,42,16,9,36,23,160%,No,61%,No,86%,73%,Yes,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-03,5/7/25,5/20/25,2025-05,56,29,71,9,9,64,36,176%,No,53%,No,90%,79%,Yes,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-04,5/21/25,6/4/25,2025-06,50,21,52,13,10,43,38,113%,Yes,54%,No,83%,80%,Yes,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-05,6/4/25,6/18/25,2025-06,50,21,83,11,10,42,39,108%,Yes,26%,No,51%,74%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-06,6/18/25,7/1/25,2025-07,51,24,73,11,10,41,39,105%,Yes,34%,No,56%,71%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-07,7/2/25,7/16/25,2025-07,51,15,64,16,12,30,43,70%,No,41%,No,47%,69%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-08,7/16/25,7/29/25,2025-07,46,20,71,16,12,44,44,100%,Yes,27%,No,62%,65%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-09,7/30/25,8/12/25,2025-08,53,17,85,11,13,30,38,78%,No,40%,No,35%,56%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-10,8/13/25,8/27/25,2025-08,52,6,94,11,12,13,33,39 Mom,No,21%,No,14%,44%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-11,8/27/25,9/10/25,2025-09,53,12,86,29,15,31,32,98%,Yes,31%,No,36%,42%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-12,9/10/25,9/24/25,2025-09,61,26,93,18,16,62,35,177%,No,31%,No,67%,43%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-13,9/24/25,10/8/25,2025-10,55,17,75,20,17,32,35,91%,Yes,33%,No,43%,43%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-14,10/8/25,10/22/25,2025-10,52,12,77,8,16,20,31,64%,No,35%,No,26%,37%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-15,10/22/25,11/4/25,2025-11,57,24,92,19,17,52,35,149%,No,52%,No,57%,40%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-16,11/5/25,11/19/25,2025-11,60,18,94,13,17,35,39,91%,Yes,36%,No,37%,44%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-17,11/19/25,12/3/25,2025-12,55,11,93,11,14,26,38,69%,No,27%,No,28%,43%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-18,12/3/25,12/17/25,2025-12,55,11,97,42,18,17,30,56%,No,19%,Yes,18%,35%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-19,12/17/25,12/31/25,2025-12,69,23,121,19,19,50,33,150%,No,51%,No,51%,36%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2025-20,12/31/25,1/14/26,2026-01,55,1,95,5,21,2,31,7%,No,27%,No,2%,32%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-01,1/14/26,1/27/26,2026-01,89,31,146,12,21,66,33,202%,No,30%,No,45%,30%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-02,1/28/26,2/11/26,2026-02,73,8,123,15,22,14,29,48%,No,24%,No,11%,26%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-03,2/11/26,2/25/26,2026-02,87,29,150,25,24,73,37,197%,No,40%,No,49%,29%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-04,2/25/26,3/11/26,2026-03,74,12,105,28,22,29,39,74%,No,38%,No,28%,31%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-05,3/11/26,3/25/26,2026-03,74,18,104,22,22,35,37,96%,Yes,23%,No,34%,28%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-06,3/25/26,4/8/26,2026-04,61,16,113,25,21,37,42,87%,Yes,19%,Yes,33%,33%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-07,4/8/26,4/22/26,2026-04,51,24,87,29,24,51,40,128%,No,45%,No,59%,35%,No,Software Delivery,Innovation Capability,Artificial Intel Techyon Forge
+Agentic AI L1,BQTZ 2026-08,4/22/26,5/6/26,2026-05,41,11,58,9,23,21,41,51%,No,8%,Yes,36%,40%,No,Software Delivery,Innovation Capability,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-01,5/22/24,6/4/24,2024-06,13,13,34,6,7,35,31,114%,Yes,0%,Yes,103%,94%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-02,6/5/24,6/18/24,2024-06,19,19,39,6,7,39,34,115%,Yes,0%,Yes,100%,96%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-03,6/19/24,7/2/24,2024-07,13,13,39,6,7,39,35,110%,Yes,0%,Yes,100%,94%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-04,7/3/24,7/16/24,2024-07,16,16,41,5,6,41,36,114%,Yes,12%,Yes,100%,93%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-05,7/17/24,7/30/24,2024-07,16,16,41,8,6,41,38,107%,Yes,0%,Yes,100%,97%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-06,7/31/24,8/13/24,2024-08,10,10,39,8,6,39,36,108%,Yes,0%,Yes,100%,100%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-07,8/14/24,8/27/24,2024-08,15,14,32,8,6,36,39,92%,Yes,20%,Yes,113%,102%,No,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-08,8/28/24,9/10/24,2024-08,13,13,53,10,7,53,42,128%,No,0%,Yes,100%,102%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-09,9/11/24,9/24/24,2024-09,29,22,51,5,7,49,43,114%,Yes,18%,Yes,96%,101%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-10,9/25/24,10/8/24,2024-09,23,23,56,6,7,56,46,123%,No,0%,Yes,100%,101%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-11,10/9/24,10/22/24,2024-10,28,26,47,4,6,45,46,97%,Yes,0%,Yes,96%,101%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-12,10/23/24,11/5/24,2024-11,22,22,52,5,6,52,49,107%,Yes,0%,Yes,100%,101%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-13,11/6/24,11/19/24,2024-11,14,14,53,7,6,53,51,103%,Yes,0%,Yes,100%,99%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-14,11/20/24,12/3/24,2024-12,23,23,48,6,5,48,51,95%,Yes,0%,Yes,100%,99%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-15,12/4/24,12/17/24,2024-12,17,17,49,7,5,49,51,97%,Yes,0%,Yes,100%,99%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications
+Alerts 1,CWXW 2024-16,12/18/24,1/6/25,2025-01,1,1,5,17,7,5,42,12%,No,0%,Yes,100%,99%,Yes,Software Delivery,Virtual Capabilities,Alerts & Mess Alerts and Notifications

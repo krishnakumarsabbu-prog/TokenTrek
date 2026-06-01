@@ -15,4 +15,6 @@ exports.store = {
     waste_items: [],
     insights: [],
     import_history: [],
+    scrum_records: [],
+    kanban_records: [],
 };

@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, PlayCircle, FileText, Settings, HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap, Swords } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, PlayCircle, FileText, Settings, HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap, Swords, GitCommit } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const NAV_GROUPS = [
@@ -18,6 +18,7 @@ const NAV_GROUPS = [
       { icon: Cpu, label: 'Model Analytics', to: '/model-analytics' },
       { icon: DollarSign, label: 'Cost Center', to: '/cost-center' },
       { icon: Trash2, label: 'AI Waste Detector', to: '/waste' },
+      { icon: GitCommit, label: 'Git Stats', to: '/git-stats' },
     ],
   },
   {
@@ -47,15 +48,36 @@ export default function Sidebar() {
 
   return (
     <motion.aside
-      className="sidebar-scroll flex flex-col overflow-y-auto overflow-x-hidden flex-shrink-0"
+      className="sidebar-scroll flex flex-col flex-shrink-0 relative overflow-visible"
       animate={{ width: w }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       style={{ background: '#0B1F3A', borderRight: '1px solid #1e3555' }}
     >
+      {/* Floating Toggle Handle */}
+      <motion.button
+        onClick={toggleSidebar}
+        className="absolute top-6 -right-3 w-6 h-6 rounded-full flex items-center justify-center z-50 shadow-md border"
+        style={{
+          background: '#0B1F3A',
+          borderColor: '#1e3555',
+          color: '#8ba3be',
+        }}
+        whileHover={{
+          scale: 1.1,
+          borderColor: '#0078d4',
+          color: '#ffffff',
+          boxShadow: '0 0 10px rgba(0, 120, 212, 0.5)',
+        }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ duration: 0.15 }}
+      >
+        {sidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+      </motion.button>
+
       {/* Logo */}
       <div
         className="flex items-center gap-3 flex-shrink-0 border-b"
-        style={{ borderColor: '#1e3555', padding: sidebarCollapsed ? '16px 14px' : '16px 16px' }}
+        style={{ borderColor: '#1e3555', padding: '16px 14px' }}
       >
         <motion.div
           className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
@@ -82,16 +104,6 @@ export default function Sidebar() {
             </motion.div>
           )}
         </AnimatePresence>
-        <motion.button
-          onClick={toggleSidebar}
-          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-          style={{ color: '#4a6a8a', marginLeft: sidebarCollapsed ? 'auto' : undefined }}
-          whileHover={{ background: '#162d4a', color: '#c8dcf0' }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ duration: 0.15 }}
-        >
-          {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </motion.button>
       </div>
 
       {/* Nav */}

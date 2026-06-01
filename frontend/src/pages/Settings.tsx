@@ -66,6 +66,32 @@ export default function Settings() {
         const data = new Uint8Array(e.target!.result as ArrayBuffer);
         const wb = XLSX.read(data, { type: 'array' });
         const parsed: Record<string, any[]> = {};
+        
+        // Auto-detect Scrum or Kanban CSV files
+        const firstSheetName = wb.SheetNames[0];
+        const firstSheetRows = XLSX.utils.sheet_to_json<any>(wb.Sheets[firstSheetName]);
+        if (firstSheetRows.length > 0) {
+          const keys = Object.keys(firstSheetRows[0]);
+          let detectedType: string | null = null;
+          if (keys.includes('Sprint Report') || keys.includes('Team Name') || keys.includes('Stable Velocity') || file.name.toLowerCase().includes('scrum')) {
+            detectedType = 'scrum_records';
+          } else if (keys.includes('Flow Efficiency') || keys.includes('Lead Time') || keys.includes('Average Throughput') || file.name.toLowerCase().includes('kanban')) {
+            detectedType = 'kanban_records';
+          }
+          
+          if (detectedType) {
+            parsed[detectedType] = firstSheetRows;
+            setParseResult({
+              filename: file.name,
+              sheets: [detectedType],
+              data: parsed,
+              valid: true,
+              type: detectedType === 'scrum_records' ? 'Scrum Agile Metrics' : 'Kanban Agile Metrics'
+            });
+            return;
+          }
+        }
+
         wb.SheetNames.forEach(name => {
           parsed[name] = XLSX.utils.sheet_to_json(wb.Sheets[name]);
         });
@@ -217,7 +243,7 @@ export default function Settings() {
                     <p className="text-sm font-semibold text-gray-800 mb-1">Download Templates</p>
                     <p className="text-xs text-gray-400 mb-3">Get CSV templates for each data sheet</p>
                     <div className="space-y-1.5">
-                      {['platforms', 'developers', 'daily_stats'].map(sheet => (
+                      {['platforms', 'developers', 'daily_stats', 'scrum_records', 'kanban_records'].map(sheet => (
                         <button key={sheet} onClick={() => downloadTemplate(sheet)}
                           className="w-full py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5">
                           <FileSpreadsheet size={11} /> {sheet}.csv

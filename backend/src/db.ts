@@ -13,6 +13,47 @@ export interface WasteItem { id: number; category: string; description: string; 
 export interface Insight { id: number; type: string; title: string; description: string; icon: string }
 export interface ImportRecord { id: number; filename: string; rows: number; status: 'success' | 'error'; errors: string[]; imported_at: string }
 
+export interface ScrumRecord {
+  id: number;
+  team_name: string;
+  sprint_report: string;
+  sprint_start: string;
+  sprint_end: string;
+  sprint_month: string;
+  issue_count: number;
+  issue_delivered: number;
+  points_comm: number;
+  cycle_time_days: number;
+  cycle_time_hrs: number;
+  velocity: number;
+  velocity_rolling_avg: number;
+  stable_velocity: string;
+  sprints_has_stable_velocity_range: string;
+  percent_churn: string;
+  sprints_has_low_churn: string;
+  predictability: string;
+  predictability_rolling_avg: string;
+  sprints_in_optimal_predictability_range: string;
+  team_delivery_type: string;
+  l4: string;
+  l3: string;
+}
+
+export interface KanbanRecord {
+  id: number;
+  team: string;
+  month_year: string;
+  cycle_time: number;
+  lead_time: number;
+  flow_efficiency: number;
+  stability: number;
+  average_throughput: number;
+  average_arrival_rate: number;
+  team_deliver_l4: string;
+  l3: string;
+  l2: string;
+}
+
 export const store: {
   platforms: Platform[];
   teams: Team[];
@@ -26,6 +67,8 @@ export const store: {
   waste_items: WasteItem[];
   insights: Insight[];
   import_history: ImportRecord[];
+  scrum_records: ScrumRecord[];
+  kanban_records: KanbanRecord[];
 } = {
   platforms: [],
   teams: [],
@@ -39,4 +82,6 @@ export const store: {
   waste_items: [],
   insights: [],
   import_history: [],
+  scrum_records: [],
+  kanban_records: [],
 };
