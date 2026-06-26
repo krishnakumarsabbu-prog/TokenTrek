@@ -57,3 +57,13 @@ export async function fetchChampions(): Promise<Champions> {
   const { data } = await client.get('/league/champions');
   return data;
 }
+
+export async function fetchDeveloperDetail(name: string): Promise<any> {
+  const { data } = await client.get(`/league/developer/${encodeURIComponent(name)}`);
+  return data;
+}
+
+export async function fetchTeamDetail(name: string): Promise<any> {
+  const { data } = await client.get(`/league/team/${encodeURIComponent(name)}`);
+  return data;
+}

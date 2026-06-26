@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, DollarSign, Zap, Clock, Crown, Swords, ArrowUpRight, ArrowDownRight, BarChart2, Star, Target, Activity, Bot, GitPullRequest } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Trophy, DollarSign, Zap, Clock, Crown, Swords, ArrowUpRight, ArrowDownRight, ChartBar as BarChart2, Star, Target, Activity, Bot, GitPullRequest } from 'lucide-react';
 import { SectionCard, PageHeader, KpiCard, ProgressBar, EmptyState, LoadingOverlay } from '../components/ui';
 import { fetchLeagueTeams } from '../api/analytics';
 import { fetchDevinTeams } from '../api/devin';
@@ -139,8 +140,8 @@ function MetricBarRow({ label, values, teams, maxValue }: { label: string; value
 
 // ─── Team Card ────────────────────────────────────────────────────────────────
 
-function TeamCard({ team, colorIdx, isSelected, onSelect, allTeams }: {
-  team: TeamEntry; colorIdx: number; isSelected: boolean; onSelect: () => void; allTeams: TeamEntry[];
+function TeamCard({ team, colorIdx, isSelected, onSelect, allTeams, onNavigate }: {
+  team: TeamEntry; colorIdx: number; isSelected: boolean; onSelect: () => void; allTeams: TeamEntry[]; onNavigate: () => void;
 }) {
   const color = TEAM_COLORS[colorIdx % TEAM_COLORS.length];
   const medal = team.rank <= 3 ? MEDALS[team.rank - 1] : null;
@@ -201,8 +202,17 @@ function TeamCard({ team, colorIdx, isSelected, onSelect, allTeams }: {
           </div>
         ))}
       </div>
-      <div className="px-4 pb-4">
-        <ProgressBar value={team.totalScore} max={100} color={color.primary} />
+      <div className="px-4 pb-4 flex items-center gap-2">
+        <ProgressBar value={team.totalScore} max={100} color={color.primary} className="flex-1" />
+        <button
+          className="text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 transition-colors"
+          style={{ background: `${color.primary}12`, color: color.primary }}
+          onClick={e => { e.stopPropagation(); onNavigate(); }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = `${color.primary}20`; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = `${color.primary}12`; }}
+        >
+          Details
+        </button>
       </div>
     </div>
   );
@@ -210,7 +220,7 @@ function TeamCard({ team, colorIdx, isSelected, onSelect, allTeams }: {
 
 // ─── Ranking Table ────────────────────────────────────────────────────────────
 
-function RankingTable({ teams }: { teams: TeamEntry[] }) {
+function RankingTable({ teams, onNavigate }: { teams: TeamEntry[]; onNavigate: (name: string) => void }) {
   const cols: { label: string; key: keyof TeamEntry; fmt: (v: number) => string }[] = [
     { label: 'Token Eff.',   key: 'tokenEfficiency',   fmt: v => `${v}` },
     { label: 'Prompt Suc.',  key: 'promptSuccessRate', fmt: v => `${v}%` },
@@ -237,7 +247,8 @@ function RankingTable({ teams }: { teams: TeamEntry[] }) {
             const medal = team.rank <= 3 ? MEDALS[team.rank - 1] : null;
             const initials = team.name.split(' ').map(w => w[0]).join('').slice(0, 2);
             return (
-              <tr key={team.name} className="border-b transition-colors" style={{ borderColor: '#f0f4f8' }}
+              <tr key={team.name} className="border-b transition-colors cursor-pointer" style={{ borderColor: '#f0f4f8' }}
+                onClick={() => onNavigate(team.name)}
                 onMouseEnter={e => { e.currentTarget.style.background = '#f7fafd'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
                 <td className="px-4 py-3">
@@ -290,6 +301,7 @@ export default function TeamBattleBoard() {
     queryFn: fetchDevinTeams,
   });
 
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<string[]>([]);
   const allSelected = useMemo(() => selected.length === 0 ? teams.map(t => t.name) : selected, [selected, teams]);
 
@@ -353,7 +365,7 @@ export default function TeamBattleBoard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                 {teams.map((team, i) => (
-                  <TeamCard key={team.name} team={team} colorIdx={i} isSelected={allSelected.includes(team.name)} onSelect={() => toggleTeam(team.name)} allTeams={teams} />
+                  <TeamCard key={team.name} team={team} colorIdx={i} isSelected={allSelected.includes(team.name)} onSelect={() => toggleTeam(team.name)} allTeams={teams} onNavigate={() => navigate(`/teams/${encodeURIComponent(team.name)}`)} />
                 ))}
               </div>
             </div>
@@ -395,7 +407,7 @@ export default function TeamBattleBoard() {
 
             {/* Full Ranking Table */}
             <SectionCard title="Full Team Ranking" noPadding>
-              <RankingTable teams={teams} />
+              <RankingTable teams={teams} onNavigate={name => navigate(`/teams/${encodeURIComponent(name)}`)} />
             </SectionCard>
 
             {/* Devin AI Leaderboard */}

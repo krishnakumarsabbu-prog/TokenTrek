@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CheckCircle2, Target, ChevronUp, ChevronDown, Search, Bot, GitPullRequest } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CircleCheck as CheckCircle2, Target, ChevronUp, ChevronDown, Search, Bot, GitPullRequest } from 'lucide-react';
 import { fetchDeveloperXP } from '../api/analytics';
 import { fetchDevinDevelopers } from '../api/devin';
 import { Avatar, PageHeader, SectionCard, LoadingOverlay, SearchBar, Select, Pagination } from '../components/ui';
@@ -154,7 +155,7 @@ function LevelBadge({ level, color }: { level: string; color: string }) {
 }
 
 // Profile card for the grid view
-function ProfileCard({ dev }: { dev: DevXP }) {
+function ProfileCard({ dev, onClick }: { dev: DevXP; onClick: () => void }) {
   const cfg = LEVEL_CONFIG[dev.level] ?? LEVEL_CONFIG['Beginner'];
   const medal = RANK_MEDAL[dev.rank];
   const nextLevelXpMap: Record<string, number> = {
@@ -163,11 +164,12 @@ function ProfileCard({ dev }: { dev: DevXP }) {
 
   return (
     <div
-      className="bg-white rounded-2xl border overflow-hidden transition-all duration-200 cursor-default flex flex-col"
+      className="bg-white rounded-2xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col"
       style={{
         borderColor: dev.rank <= 3 ? cfg.border : '#e5eaf0',
         boxShadow: dev.rank <= 3 ? `0 4px 16px ${cfg.glow}` : '0 1px 3px rgba(0,30,60,0.05)',
       }}
+      onClick={onClick}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.boxShadow = `0 8px 28px ${cfg.glow}`;
@@ -285,14 +287,15 @@ function ProfileCard({ dev }: { dev: DevXP }) {
 }
 
 // Leaderboard table row
-function LeaderRow({ dev, rank }: { dev: DevXP; rank: number }) {
+function LeaderRow({ dev, rank, onClick }: { dev: DevXP; rank: number; onClick: () => void }) {
   const cfg = LEVEL_CONFIG[dev.level] ?? LEVEL_CONFIG['Beginner'];
   const medal = RANK_MEDAL[rank];
 
   return (
     <tr
-      className="border-b transition-colors cursor-default"
+      className="border-b transition-colors cursor-pointer"
       style={{ borderColor: '#f0f4f8' }}
+      onClick={onClick}
       onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = '#f7fafd'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}
     >
@@ -392,6 +395,7 @@ export default function DeveloperXP() {
   const { data, isLoading } = useQuery<DevXP[]>({ queryKey: ['developer-xp'], queryFn: fetchDeveloperXP });
   const { data: devinDevs = [] } = useQuery({ queryKey: ['devin-developers'], queryFn: fetchDevinDevelopers });
 
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState('All Levels');
   const [teamFilter, setTeamFilter] = useState(TEAM_ALL);
@@ -629,7 +633,8 @@ export default function DeveloperXP() {
                           if (dev.categories?.some((c: string) => c.includes('migration'))) badges.push('Migration Master');
                           const initials = (dev.user_name || dev.user_email).split(/[.\s@]/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
                           return (
-                            <tr key={dev.user_email} className="border-b transition-colors" style={{ borderColor: '#f0f4f8' }}
+                            <tr key={dev.user_email} className="border-b transition-colors cursor-pointer" style={{ borderColor: '#f0f4f8' }}
+                              onClick={() => navigate(`/developers/${encodeURIComponent(dev.user_name || dev.user_email)}`)}
                               onMouseEnter={e => (e.currentTarget.style.background = '#f7fafd')}
                               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                               <td className="px-4 py-3">
@@ -710,7 +715,7 @@ export default function DeveloperXP() {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {paged.map(dev => (
-                    <ProfileCard key={dev.developer_id} dev={dev} />
+                    <ProfileCard key={dev.developer_id} dev={dev} onClick={() => navigate(`/developers/${encodeURIComponent(dev.developer)}`)} />
                   ))}
                 </div>
                 {totalPages > 1 && (
@@ -763,7 +768,7 @@ export default function DeveloperXP() {
                     </thead>
                     <tbody>
                       {paged.map((dev, i) => (
-                        <LeaderRow key={dev.developer_id} dev={dev} rank={(page - 1) * PAGE_SIZE + i + 1} />
+                        <LeaderRow key={dev.developer_id} dev={dev} rank={(page - 1) * PAGE_SIZE + i + 1} onClick={() => navigate(`/developers/${encodeURIComponent(dev.developer)}`)} />
                       ))}
                     </tbody>
                   </table>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Trophy, Star, Zap, TrendingUp, TrendingDown, Crown, Award, Target, DollarSign, Users, ArrowUpRight, ArrowDownRight, Flame, Shield, Bot, GitPullRequest } from 'lucide-react';
 import { fetchDevLeaderboard, fetchTeamLeaderboard, fetchChampions, DevLeaderboardEntry, TeamLeaderboardEntry } from '../api/league';
 import { fetchUIConfig } from '../api/analytics';
@@ -193,7 +194,7 @@ const SCORE_METRICS = [
   { key: 'productivityGain', label: 'Productivity Gain', color: '#ec4899' },
 ] as const;
 
-function DevRow({ entry, expanded, onToggle, platformColors }: { entry: DevLeaderboardEntry; expanded: boolean; onToggle: () => void; platformColors: any }) {
+function DevRow({ entry, expanded, onToggle, platformColors, onNavigate }: { entry: DevLeaderboardEntry; expanded: boolean; onToggle: () => void; platformColors: any; onNavigate: () => void }) {
   const pc = (platformColors && platformColors[entry.platform]) || '#0078d4';
   const isTop3 = entry.rank <= 3;
 
@@ -283,6 +284,17 @@ function DevRow({ entry, expanded, onToggle, platformColors }: { entry: DevLeade
                 <p className="text-xs" style={{ color: '#8ba3be' }}>Adoption Score</p>
               </div>
             </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                style={{ background: '#eff6ff', color: '#0078d4' }}
+                onClick={e => { e.stopPropagation(); onNavigate(); }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#dbeafe'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#eff6ff'; }}
+              >
+                View Full Profile
+              </button>
+            </div>
           </td>
         </tr>
       )}
@@ -290,12 +302,13 @@ function DevRow({ entry, expanded, onToggle, platformColors }: { entry: DevLeade
   );
 }
 
-function TeamRow({ entry }: { entry: TeamLeaderboardEntry }) {
+function TeamRow({ entry, onNavigate }: { entry: TeamLeaderboardEntry; onNavigate: () => void }) {
   const isTop3 = entry.rank <= 3;
   return (
     <tr
-      className="border-b transition-colors cursor-default"
+      className="border-b transition-colors cursor-pointer"
       style={{ borderColor: '#f0f4f8' }}
+      onClick={onNavigate}
       onMouseEnter={e => { e.currentTarget.style.background = '#f7fafd'; }}
       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
     >
@@ -358,6 +371,7 @@ function TeamRow({ entry }: { entry: TeamLeaderboardEntry }) {
 export default function AILeague() {
   const [tab, setTab] = useState('developers');
   const [expandedDev, setExpandedDev] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data: devLeaderboard = [], isLoading: devLoading } = useQuery({
     queryKey: ['league-devs'],
@@ -569,6 +583,7 @@ export default function AILeague() {
                           expanded={expandedDev === entry.name}
                           onToggle={() => setExpandedDev(expandedDev === entry.name ? null : entry.name)}
                           platformColors={platformColors}
+                          onNavigate={() => navigate(`/developers/${encodeURIComponent(entry.name)}`)}
                         />
                       ))}
                     </tbody>
@@ -600,7 +615,7 @@ export default function AILeague() {
                     </thead>
                     <tbody>
                       {teamLeaderboard.map(entry => (
-                        <TeamRow key={entry.name} entry={entry} />
+                        <TeamRow key={entry.name} entry={entry} onNavigate={() => navigate(`/teams/${encodeURIComponent(entry.name)}`)} />
                       ))}
                     </tbody>
                   </table>
@@ -654,7 +669,8 @@ export default function AILeague() {
                     const initials = (dev.user_name || dev.user_email).split(/[.\s@]/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
                     const successRate = dev.total_prs > 0 ? Math.round((dev.merged_prs / dev.total_prs) * 100) : 0;
                     return (
-                      <tr key={dev.user_email} className="border-b transition-colors" style={{ borderColor: '#f0f4f8' }}
+                      <tr key={dev.user_email} className="border-b transition-colors cursor-pointer" style={{ borderColor: '#f0f4f8' }}
+                        onClick={() => navigate(`/developers/${encodeURIComponent(dev.user_name || dev.user_email)}`)}
                         onMouseEnter={e => { e.currentTarget.style.background = '#f7fafd'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
                         <td className="px-4 py-3">

@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Users, DollarSign, TrendingUp, Activity, ArrowUpRight, Download, Bot } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Activity, ArrowUpRight, Download, Bot, ChevronRight } from 'lucide-react';
 import { fetchLeagueTeams, fetchUIConfig } from '../api/analytics';
 import { fetchDevinTeams } from '../api/devin';
 import { SectionCard, SearchBar, Select, Pagination, KpiCard, Badge, Trend, FilterBar, LoadingOverlay, EmptyState, ProgressBar, PageHeader, Avatar } from '../components/ui';
@@ -19,6 +20,7 @@ export default function Teams() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('cost');
   const [page, setPage] = useState(1);
+  const navigate = useNavigate();
 
   const { data: rawTeams = [], isLoading: teamsLoading } = useQuery({
     queryKey: ['league-teams'],
@@ -211,14 +213,16 @@ export default function Teams() {
                           <th className="table-header-cell text-right">Merged PR</th>
                           <th className="table-header-cell text-right">AI Score</th>
                           <th className="table-header-cell min-w-[150px]">AI Adoption</th>
+                          <th className="table-header-cell w-8" />
                         </tr>
                       </thead>
                       <tbody>
                         {paged.map((t, i) => (
                           <tr
                             key={t.id}
-                            className="border-b transition-colors"
+                            className="border-b transition-colors cursor-pointer"
                             style={{ borderColor: '#f0f4f8' }}
+                            onClick={() => navigate(`/teams/${encodeURIComponent(t.name)}`)}
                             onMouseEnter={e => (e.currentTarget.style.background = '#f7fafd')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                           >
@@ -283,6 +287,9 @@ export default function Teams() {
                                   {t.utilization}%
                                 </span>
                               </div>
+                            </td>
+                            <td className="table-cell text-right">
+                              <ChevronRight size={14} style={{ color: '#c5d4e0', marginLeft: 'auto' }} />
                             </td>
                           </tr>
                         ))}

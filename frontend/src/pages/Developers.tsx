@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { TrendingUp, Award, Users, DollarSign, ArrowUpRight, ArrowDownRight, Download } from 'lucide-react';
+import { TrendingUp, Award, Users, DollarSign, ArrowUpRight, ArrowDownRight, Download, ChevronRight } from 'lucide-react';
 import { fetchLeagueDevelopers, fetchUIConfig } from '../api/analytics';
 import { SectionCard, SearchBar, Select, Pagination, Avatar, ProgressBar, Badge, KpiCard, Trend, FilterBar, LoadingOverlay, EmptyState, PageHeader } from '../components/ui';
 
@@ -25,6 +26,7 @@ export default function Developers() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('score');
   const [page, setPage] = useState(1);
+  const navigate = useNavigate();
 
   const { data: rawDevs = [], isLoading: devsLoading } = useQuery({
     queryKey: ['league-developers'],
@@ -198,6 +200,7 @@ export default function Developers() {
                           <th className="table-header-cell text-right">Cost Saved</th>
                           <th className="table-header-cell text-right">Prompts</th>
                           <th className="table-header-cell text-center">Platform</th>
+                          <th className="table-header-cell w-8" />
                         </tr>
                       </thead>
                       <tbody>
@@ -208,8 +211,9 @@ export default function Developers() {
                           return (
                             <tr
                               key={d.name + rank}
-                              className="border-b transition-colors cursor-default"
+                              className="border-b transition-colors cursor-pointer"
                               style={{ borderColor: '#f0f4f8' }}
+                              onClick={() => navigate(`/developers/${encodeURIComponent(d.name)}`)}
                               onMouseEnter={e => (e.currentTarget.style.background = '#f7fafd')}
                               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                             >
@@ -250,6 +254,9 @@ export default function Developers() {
                                 >
                                   {d.platform}
                                 </span>
+                              </td>
+                              <td className="table-cell text-right">
+                                <ChevronRight size={14} style={{ color: '#c5d4e0', marginLeft: 'auto' }} />
                               </td>
                             </tr>
                           );

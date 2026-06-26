@@ -17,6 +17,8 @@ import DeveloperXP from './pages/DeveloperXP';
 import TeamBattleBoard from './pages/TeamBattleBoard';
 import GitStats from './pages/GitStats';
 import DevinStats from './pages/DevinStats';
+import DeveloperDetail from './pages/DeveloperDetail';
+import TeamDetail from './pages/TeamDetail';
 
 export default function App() {
   return (
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="git-stats" element={<GitStats />} />
           <Route path="devin-stats" element={<DevinStats />} />
+          <Route path="developers/:name" element={<DeveloperDetail />} />
+          <Route path="teams/:name" element={<TeamDetail />} />
           <Route path="*" element={<Navigate to="/overview" replace />} />
         </Route>
       </Routes>
