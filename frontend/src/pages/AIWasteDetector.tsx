@@ -10,29 +10,6 @@ const PAGE_SIZE = 8;
 const SEVERITY_COLOR: Record<string, string> = { high: '#dc2626', medium: '#d97706', low: '#0078d4' };
 const SEVERITY_BG: Record<string, string> = { high: '#fef2f2', medium: '#fffbeb', low: '#eff6ff' };
 
-const WASTE_ITEMS = [
-  { id: 1, category: 'efficiency', description: 'High token, low success prompts', occurrences: 23, severity: 'high', estimatedCost: 2760, trend: -5 },
-  { id: 2, category: 'redundancy', description: 'Repeated identical prompts', occurrences: 156, severity: 'medium', estimatedCost: 6240, trend: -12 },
-  { id: 3, category: 'cost', description: 'Overused expensive models for simple tasks', occurrences: 14, severity: 'high', estimatedCost: 1680, trend: 3 },
-  { id: 4, category: 'optimization', description: 'Inefficient long-context prompts', occurrences: 31, severity: 'low', estimatedCost: 310, trend: -8 },
-  { id: 5, category: 'redundancy', description: 'Multi-turn prompts with context loss', occurrences: 45, severity: 'medium', estimatedCost: 1800, trend: -2 },
-  { id: 6, category: 'efficiency', description: 'Prompts with no clear instructions', occurrences: 67, severity: 'medium', estimatedCost: 2680, trend: 5 },
-  { id: 7, category: 'security', description: 'Prompts containing PII or secrets', occurrences: 3, severity: 'high', estimatedCost: 360, trend: 0 },
-  { id: 8, category: 'cost', description: 'Unused completions (aborted sessions)', occurrences: 89, severity: 'low', estimatedCost: 890, trend: -15 },
-  { id: 9, category: 'optimization', description: 'Duplicate code generation requests', occurrences: 52, severity: 'medium', estimatedCost: 2080, trend: -7 },
-  { id: 10, category: 'efficiency', description: 'Overly complex system prompts', occurrences: 18, severity: 'low', estimatedCost: 180, trend: 2 },
-];
-
-const TREND_DATA = [
-  { date: 'May 12', waste: 4200 },
-  { date: 'May 13', waste: 3800 },
-  { date: 'May 14', waste: 4600 },
-  { date: 'May 15', waste: 3200 },
-  { date: 'May 16', waste: 3900 },
-  { date: 'May 17', waste: 2800 },
-  { date: 'May 18', waste: 2400 },
-];
-
 const PRIORITY_BADGE: Record<string, 'red' | 'yellow' | 'blue' | 'gray'> = {
   critical: 'red', high: 'red', medium: 'yellow', low: 'blue',
 };
@@ -43,32 +20,40 @@ export default function AIWasteDetector() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
 
-  useQuery({ queryKey: ['ai-waste'], queryFn: fetchAIWaste });
+  const { data: wasteData, isLoading: isWasteLoading } = useQuery({ queryKey: ['ai-waste'], queryFn: fetchAIWaste });
   const recommendations = useQuery({ queryKey: ['recommendations'], queryFn: fetchRecommendations });
 
+  const isLoading = isWasteLoading || recommendations.isLoading;
+
+  const wasteItems: any[] = wasteData?.items ?? [];
+  const trendData: any[] = wasteData?.trendData ?? [];
+  const totalOccurrences = wasteData?.totalOccurrences ?? 0;
+  const totalWasteCost = wasteData?.totalEstimatedWasteCost ?? 0;
+  const highSeverityCount = wasteData?.highSeverityCount ?? 0;
+  const savingsOpp = Math.round(totalWasteCost * 0.7);
+
   const filtered = useMemo(() => {
-    let data = [...WASTE_ITEMS];
-    if (search) data = data.filter(w => w.description.toLowerCase().includes(search.toLowerCase()) || w.category.toLowerCase().includes(search.toLowerCase()));
-    if (severityFilter !== 'all') data = data.filter(w => w.severity === severityFilter);
-    if (categoryFilter !== 'all') data = data.filter(w => w.category === categoryFilter);
+    let data = [...wasteItems];
+    if (search) data = data.filter((w: any) => w.description.toLowerCase().includes(search.toLowerCase()) || w.category.toLowerCase().includes(search.toLowerCase()));
+    if (severityFilter !== 'all') data = data.filter((w: any) => w.severity === severityFilter);
+    if (categoryFilter !== 'all') data = data.filter((w: any) => w.category === categoryFilter);
     return data;
-  }, [search, severityFilter, categoryFilter]);
+  }, [wasteItems, search, severityFilter, categoryFilter]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const totalOccurrences = WASTE_ITEMS.reduce((s, w) => s + w.occurrences, 0);
-  const totalWasteCost = WASTE_ITEMS.reduce((s, w) => s + w.estimatedCost, 0);
-  const highSeverityCount = WASTE_ITEMS.filter(w => w.severity === 'high').reduce((s, w) => s + w.occurrences, 0);
-  const savingsOpp = Math.round(totalWasteCost * 0.7);
-
   const pieData = [
-    { name: 'Efficiency', value: WASTE_ITEMS.filter(w => w.category === 'efficiency').reduce((s, w) => s + w.estimatedCost, 0), color: '#dc2626' },
-    { name: 'Redundancy', value: WASTE_ITEMS.filter(w => w.category === 'redundancy').reduce((s, w) => s + w.estimatedCost, 0), color: '#d97706' },
-    { name: 'Cost', value: WASTE_ITEMS.filter(w => w.category === 'cost').reduce((s, w) => s + w.estimatedCost, 0), color: '#8b5cf6' },
-    { name: 'Optimization', value: WASTE_ITEMS.filter(w => w.category === 'optimization').reduce((s, w) => s + w.estimatedCost, 0), color: '#0078d4' },
-    { name: 'Security', value: WASTE_ITEMS.filter(w => w.category === 'security').reduce((s, w) => s + w.estimatedCost, 0), color: '#ec4899' },
+    { name: 'Efficiency', value: wasteItems.filter((w: any) => w.category === 'efficiency').reduce((s: number, w: any) => s + w.estimatedCost, 0), color: '#dc2626' },
+    { name: 'Redundancy', value: wasteItems.filter((w: any) => w.category === 'redundancy').reduce((s: number, w: any) => s + w.estimatedCost, 0), color: '#d97706' },
+    { name: 'Cost', value: wasteItems.filter((w: any) => w.category === 'cost').reduce((s: number, w: any) => s + w.estimatedCost, 0), color: '#8b5cf6' },
+    { name: 'Optimization', value: wasteItems.filter((w: any) => w.category === 'optimization').reduce((s: number, w: any) => s + w.estimatedCost, 0), color: '#0078d4' },
+    { name: 'Security', value: wasteItems.filter((w: any) => w.category === 'security').reduce((s: number, w: any) => s + w.estimatedCost, 0), color: '#ec4899' },
   ];
+
+  if (isLoading) {
+    return <LoadingOverlay />;
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
@@ -96,7 +81,7 @@ export default function AIWasteDetector() {
           <SectionCard title="Waste Trend — 7 Days" className="xl:col-span-2">
             <div className="p-4 pt-3">
               <ResponsiveContainer width="100%" height={190}>
-                <AreaChart data={TREND_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <AreaChart data={trendData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gWaste" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#dc2626" stopOpacity={0.15} />

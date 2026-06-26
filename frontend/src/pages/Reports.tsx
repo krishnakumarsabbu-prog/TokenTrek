@@ -1,20 +1,18 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, PieChart, Pie } from 'recharts';
 import { FileText, Download, RefreshCw, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
-import { fetchReports } from '../api/analytics';
+import { fetchReports, fetchUIConfig } from '../api/analytics';
 import { SectionCard, KpiCard, Badge, Select, FilterBar, LoadingOverlay } from '../components/ui';
 
-const TYPE_COLORS: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
-  executive: { bg: '#eff6ff', color: '#2563eb', icon: <TrendingUp size={16} /> },
-  productivity: { bg: '#f0fdf4', color: '#16a34a', icon: <CheckCircle size={16} /> },
-  cost: { bg: '#fff7ed', color: '#ea580c', icon: <DollarSign size={16} /> },
-  waste: { bg: '#fef2f2', color: '#dc2626', icon: <AlertTriangle size={16} /> },
-  security: { bg: '#fdf4ff', color: '#9333ea', icon: <CheckCircle size={16} /> },
-  performance: { bg: '#fef9c3', color: '#a16207', icon: <TrendingUp size={16} /> },
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  executive: <TrendingUp size={16} />,
+  productivity: <CheckCircle size={16} />,
+  cost: <DollarSign size={16} />,
+  waste: <AlertTriangle size={16} />,
+  security: <CheckCircle size={16} />,
+  performance: <TrendingUp size={16} />,
 };
-
-const PLATFORM_COLORS = ['#0078d4', '#00b4d8', '#e07b39', '#8b5cf6', '#10b981'];
 
 function relTime(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 86400000;
@@ -27,14 +25,42 @@ export default function Reports() {
   const [period, setPeriod] = useState('weekly');
 
   const reports = useQuery({ queryKey: ['reports'], queryFn: fetchReports });
+  const uiConfigQuery = useQuery({ queryKey: ['ui-config'], queryFn: fetchUIConfig });
 
   const data = reports.data;
+  const uiConfig = uiConfigQuery.data;
+
+  const typeColors = uiConfig?.typeColors ?? {};
+  const platformColors = uiConfig?.platformColors ? (Object.values(uiConfig.platformColors) as string[]) : ['#0078d4', '#00b4d8', '#e07b39', '#8b5cf6', '#10b981'];
+
+  const reportTypeColors = useMemo(() => {
+    const res: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {};
+    Object.keys(typeColors).forEach(key => {
+      res[key] = {
+        bg: typeColors[key].bg,
+        color: typeColors[key].color,
+        icon: TYPE_ICONS[key] || <FileText size={16} />,
+      };
+    });
+    return res;
+  }, [typeColors]);
+
+  if (reports.isLoading || uiConfigQuery.isLoading) {
+    return <LoadingOverlay />;
+  }
 
   const summary = data?.summary || {};
   const reportsList = data?.reports || [];
   const dailyBreakdown = data?.daily_breakdown || [];
   const platformBreakdown = data?.platform_breakdown || [];
   const teamBreakdown = data?.team_breakdown || [];
+
+  const totalCost = summary.total_cost ?? 0;
+  const totalRequests = summary.total_requests ?? 0;
+  const activeDevelopers = summary.active_developers ?? 0;
+  const costChange = summary.cost_change ?? 0;
+  const requestChange = summary.request_change ?? 0;
+  const periodSub = summary.period ?? '';
 
   const barData = dailyBreakdown.map((d: any) => ({
     date: d.date.slice(5),
@@ -43,7 +69,7 @@ export default function Reports() {
   }));
 
   const pieData = platformBreakdown.slice(0, 5).map((p: any, i: number) => ({
-    name: p.name, value: p.cost, color: PLATFORM_COLORS[i],
+    name: p.name, value: p.cost, color: platformColors[i % platformColors.length] || '#0078d4',
   }));
 
   return (
@@ -70,10 +96,10 @@ export default function Reports() {
       <div className="flex-1 overflow-y-auto p-5 min-h-0" style={{ background: '#f0f4f8' }}>
         {/* KPIs */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-          <KpiCard label="Total Cost" value={`$${(summary.total_cost / 1000).toFixed(0)}K`} change={summary.cost_change} icon={<DollarSign size={18} />} iconBg="#fff7ed" iconColor="#ea580c" />
-          <KpiCard label="Total Requests" value={`${(summary.total_requests / 1e6).toFixed(2)}M`} change={summary.request_change} icon={<TrendingUp size={18} />} iconBg="#eff6ff" iconColor="#2563eb" />
-          <KpiCard label="Active Developers" value={String(summary.active_developers || 42)} icon={<CheckCircle size={18} />} iconBg="#f0fdf4" iconColor="#16a34a" />
-          <KpiCard label="Reports Generated" value={String(reportsList.length)} icon={<FileText size={18} />} iconBg="#f5f3ff" iconColor="#7c3aed" sub={summary.period} />
+          <KpiCard label="Total Cost" value={`$${(totalCost / 1000).toFixed(0)}K`} change={costChange} icon={<DollarSign size={18} />} iconBg="#fff7ed" iconColor="#ea580c" />
+          <KpiCard label="Total Requests" value={`${(totalRequests / 1e6).toFixed(2)}M`} change={requestChange} icon={<TrendingUp size={18} />} iconBg="#eff6ff" iconColor="#2563eb" />
+          <KpiCard label="Active Developers" value={String(activeDevelopers)} icon={<CheckCircle size={18} />} iconBg="#f0fdf4" iconColor="#16a34a" />
+          <KpiCard label="Reports Generated" value={String(reportsList.length)} icon={<FileText size={18} />} iconBg="#f5f3ff" iconColor="#7c3aed" sub={periodSub} />
         </div>
 
         {/* Charts */}
@@ -137,7 +163,7 @@ export default function Reports() {
                 <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`$${v.toLocaleString()}`, 'Cost']} />
                 <Bar dataKey="cost" radius={[4, 4, 0, 0]}>
-                  {teamBreakdown.map((_: any, i: number) => <Cell key={i} fill={PLATFORM_COLORS[i % PLATFORM_COLORS.length]} />)}
+                  {teamBreakdown.map((_: any, i: number) => <Cell key={i} fill={platformColors[i % platformColors.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -149,7 +175,7 @@ export default function Reports() {
           {reports.isLoading ? <LoadingOverlay /> : (
             <div className="divide-y divide-gray-50">
               {reportsList.map((report: any) => {
-                const typeConfig = TYPE_COLORS[report.type] || { bg: '#f1f5f9', color: '#475569', icon: <FileText size={16} /> };
+                const typeConfig = reportTypeColors[report.type] || { bg: '#f1f5f9', color: '#475569', icon: <FileText size={16} /> };
                 return (
                   <div key={report.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50/50 transition-colors">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: typeConfig.bg }}>

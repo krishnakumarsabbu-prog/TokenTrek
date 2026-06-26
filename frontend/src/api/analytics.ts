@@ -16,3 +16,9 @@ export const fetchDeveloperXP = () => api.get('/analytics/developer-xp').then(r 
 export const fetchMarketplacePrompts = () => api.get('/analytics/marketplace').then(r => r.data);
 export const fetchReplayItems = () => api.get('/analytics/replay').then(r => r.data);
 export const fetchReports = () => api.get('/analytics/reports').then(r => r.data);
+export const fetchUIConfig = () => api.get('/analytics/config').then(r => r.data);
+
+// League endpoints
+export const fetchLeagueDevelopers = () => api.get('/league/developer-leaderboard').then(r => r.data);
+export const fetchLeagueTeams = () => api.get('/league/team-leaderboard').then(r => r.data);
+export const fetchLeagueChampions = () => api.get('/league/champions').then(r => r.data);

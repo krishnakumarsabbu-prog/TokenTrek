@@ -2,14 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Star, Zap, TrendingUp, TrendingDown, Crown, Award, Target, DollarSign, Users, ArrowUpRight, ArrowDownRight, Flame, Shield } from 'lucide-react';
 import { fetchDevLeaderboard, fetchTeamLeaderboard, fetchChampions, DevLeaderboardEntry, TeamLeaderboardEntry } from '../api/league';
+import { fetchUIConfig } from '../api/analytics';
 import { SectionCard, Avatar, ProgressBar, Tabs, PageHeader, KpiCard, Badge } from '../components/ui';
-
-const PLATFORM_COLORS: Record<string, string> = {
-  Claude: '#e07b39',
-  'GPT-4o': '#10a37f',
-  Cursor: '#0078d4',
-  'GitHub Copilot': '#6366f1',
-};
 
 const MEDAL_CONFIG = [
   { bg: 'linear-gradient(135deg, #FFD700, #FFA500)', shadow: 'rgba(255,215,0,0.4)', label: 'Gold' },
@@ -198,8 +192,8 @@ const SCORE_METRICS = [
   { key: 'productivityGain', label: 'Productivity Gain', color: '#ec4899' },
 ] as const;
 
-function DevRow({ entry, expanded, onToggle }: { entry: DevLeaderboardEntry; expanded: boolean; onToggle: () => void }) {
-  const pc = PLATFORM_COLORS[entry.platform] || '#0078d4';
+function DevRow({ entry, expanded, onToggle, platformColors }: { entry: DevLeaderboardEntry; expanded: boolean; onToggle: () => void; platformColors: any }) {
+  const pc = (platformColors && platformColors[entry.platform]) || '#0078d4';
   const isTop3 = entry.rank <= 3;
 
   return (
@@ -368,6 +362,13 @@ export default function AILeague() {
     queryKey: ['league-devs'],
     queryFn: fetchDevLeaderboard,
   });
+
+  const { data: uiConfig } = useQuery({
+    queryKey: ['ui-config'],
+    queryFn: fetchUIConfig,
+  });
+
+  const platformColors = uiConfig?.platformColors ?? {};
 
   const { data: teamLeaderboard = [], isLoading: teamLoading } = useQuery({
     queryKey: ['league-teams'],
@@ -561,6 +562,7 @@ export default function AILeague() {
                           entry={entry}
                           expanded={expandedDev === entry.name}
                           onToggle={() => setExpandedDev(expandedDev === entry.name ? null : entry.name)}
+                          platformColors={platformColors}
                         />
                       ))}
                     </tbody>

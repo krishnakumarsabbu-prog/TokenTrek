@@ -9,13 +9,13 @@ router.get('/stats', (_req, res) => {
   const totalCost = store.daily_stats.reduce((s, r) => s + r.cost, 0);
   const devs = store.developers.length;
   res.json({
-    totalRequests: totalRequests || 2450000,
-    totalTokens: totalTokens || 1240000000,
-    totalCost: Math.round(totalCost) || 186245,
-    activeDevelopers: devs || 342,
-    timeSaved: 1842,
-    aiRoi: 276300,
-    changes: { totalRequests: 18.6, totalTokens: 24.7, totalCost: 21.4, activeDevelopers: 12.8, timeSaved: 30.5, aiRoi: 28.3 },
+    totalRequests,
+    totalTokens,
+    totalCost: Math.round(totalCost),
+    activeDevelopers: devs,
+    timeSaved: 0,
+    aiRoi: 0,
+    changes: { totalRequests: 0, totalTokens: 0, totalCost: 0, activeDevelopers: 0, timeSaved: 0, aiRoi: 0 },
   });
 });
 
@@ -94,7 +94,7 @@ router.get('/live-activity', (_req, res) => {
       const platform = store.platforms.find(p => p.id === la.platform_id);
       return { developer: dev?.name || '', avatar: dev?.avatar || '', action: la.action, platform: platform?.name || '', time: la.created_at };
     });
-  res.json({ items, activeSessions: 124 });
+  res.json({ items, activeSessions: store.live_activity.length });
 });
 
 router.get('/waste-items', (_req, res) => {

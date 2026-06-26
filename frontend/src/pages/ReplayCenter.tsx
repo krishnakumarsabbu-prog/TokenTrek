@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { PlayCircle, Clock, CheckCircle, XCircle, DollarSign, Search, X, User, Cpu, Globe, FolderOpen, ThumbsUp, ThumbsDown, Minus, Code as Code2, FileCode as FileCode2, Hash, Zap, ChevronRight, Users, Tag, AlertTriangle, CheckSquare, MessageSquare, Terminal, ArrowRight, Maximize2, TrendingUp } from 'lucide-react';
-import { fetchReplayItems } from '../api/analytics';
+import { fetchReplayItems, fetchUIConfig } from '../api/analytics';
 import {
   SectionCard, SearchBar, Select, Pagination, KpiCard, Badge,
   FilterBar, LoadingOverlay, EmptyState, Avatar,
@@ -10,30 +10,10 @@ import {
 
 const PAGE_SIZE = 8;
 
-const MODEL_COLORS: Record<string, string> = {
-  'Claude 3.5 Sonnet': '#e07b39',
-  'GPT-4o': '#0078d4',
-  'GPT-4 Turbo': '#00b4d8',
-  'Claude 3 Haiku': '#f59e0b',
-  'Gemini 1.5 Pro': '#10b981',
-};
-
 const ACCEPTANCE_CONFIG: Record<string, { label: string; variant: 'green' | 'yellow' | 'red' | 'gray'; icon: typeof ThumbsUp }> = {
   accepted: { label: 'Accepted', variant: 'green', icon: ThumbsUp },
   partially_accepted: { label: 'Partial', variant: 'yellow', icon: Minus },
   rejected: { label: 'Rejected', variant: 'red', icon: ThumbsDown },
-};
-
-const TIMELINE_CONFIG: Record<string, { color: string; bg: string; icon: typeof CheckCircle }> = {
-  start:      { color: '#2563eb', bg: '#eff6ff', icon: PlayCircle },
-  prompt:     { color: '#7c3aed', bg: '#f5f3ff', icon: MessageSquare },
-  processing: { color: '#d97706', bg: '#fef3c7', icon: Cpu },
-  response:   { color: '#059669', bg: '#ecfdf5', icon: Terminal },
-  review:     { color: '#0891b2', bg: '#ecfeff', icon: Search },
-  accepted:   { color: '#16a34a', bg: '#f0fdf4', icon: CheckSquare },
-  rejected:   { color: '#dc2626', bg: '#fef2f2', icon: XCircle },
-  warning:    { color: '#ea580c', bg: '#fff7ed', icon: AlertTriangle },
-  end:        { color: '#475569', bg: '#f8fafc', icon: CheckCircle },
 };
 
 function fmt(n: number) {
@@ -121,14 +101,16 @@ function TokenBar({ label, value, total, color }: { label: string; value: number
   );
 }
 
-function SessionModal({ session, onClose, allSessions, onNavigate }: {
+function SessionModal({ session, onClose, allSessions, onNavigate, modelColors, timelineConfigMap }: {
   session: any;
   onClose: () => void;
   allSessions: any[];
   onNavigate: (s: any) => void;
+  modelColors: any;
+  timelineConfigMap: any;
 }) {
   const [activeTab, setActiveTab] = useState<'overview' | 'prompt' | 'response' | 'code' | 'timeline'>('overview');
-  const modelColor = MODEL_COLORS[session.model] || '#0078d4';
+  const modelColor = (modelColors && modelColors[session.model]) || '#0078d4';
   const acceptance = ACCEPTANCE_CONFIG[session.acceptance] || ACCEPTANCE_CONFIG.rejected;
   const AcceptIcon = acceptance.icon;
   const currentIdx = allSessions.findIndex(s => s.session_id === session.session_id);
@@ -441,7 +423,7 @@ function SessionModal({ session, onClose, allSessions, onNavigate }: {
                       <div className="absolute left-[18px] top-0 bottom-0 w-px bg-gray-100" />
                       <div className="space-y-1">
                         {(session.timeline || []).map((event: any, i: number) => {
-                          const cfg = TIMELINE_CONFIG[event.type] || TIMELINE_CONFIG.end;
+                          const cfg = (timelineConfigMap && timelineConfigMap[event.type]) || { color: '#475569', bg: '#f8fafc', icon: CheckCircle, label: event.type };
                           const Icon = cfg.icon;
                           const isLast = i === (session.timeline?.length ?? 0) - 1;
                           return (
@@ -503,6 +485,18 @@ function SessionModal({ session, onClose, allSessions, onNavigate }: {
   );
 }
 
+const TIMELINE_ICONS: Record<string, any> = {
+  Play: PlayCircle,
+  Send: MessageSquare,
+  Loader2: Cpu,
+  MessageSquare: Terminal,
+  Eye: Search,
+  Check: CheckSquare,
+  X: XCircle,
+  AlertTriangle: AlertTriangle,
+  Power: CheckCircle,
+};
+
 export default function ReplayCenter() {
   const [search, setSearch] = useState('');
   const [modelFilter, setModelFilter] = useState('all');
@@ -511,7 +505,10 @@ export default function ReplayCenter() {
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
   const sessions = useQuery({ queryKey: ['replay'], queryFn: fetchReplayItems });
+  const uiConfigQuery = useQuery({ queryKey: ['ui-config'], queryFn: fetchUIConfig });
+
   const data = sessions.data || [];
+  const uiConfig = uiConfigQuery.data;
 
   const filtered = useMemo(() => {
     let d = [...data];
@@ -532,6 +529,39 @@ export default function ReplayCenter() {
   const successRate = data.length ? Math.round((data.filter((r: any) => r.success).length / data.length) * 100) : 0;
   const avgDuration = data.length ? Math.round(data.reduce((s: number, r: any) => s + r.duration_ms, 0) / data.length / 1000) : 0;
   const models: string[] = ['all', ...(Array.from(new Set(data.map((r: any) => r.model))) as string[])];
+
+  const modelColors = useMemo(() => uiConfig?.modelColors ?? {}, [uiConfig]);
+
+  const timelineConfigMap = useMemo(() => {
+    const raw = uiConfig?.timelineConfig ?? {};
+    const result: Record<string, { color: string; bg: string; icon: any; label: string }> = {};
+    const fallbackConfig = {
+      start:      { color: '#2563eb', bg: '#eff6ff', icon: PlayCircle },
+      prompt:     { color: '#7c3aed', bg: '#f5f3ff', icon: MessageSquare },
+      processing: { color: '#d97706', bg: '#fef3c7', icon: Cpu },
+      response:   { color: '#059669', bg: '#ecfdf5', icon: Terminal },
+      review:     { color: '#0891b2', bg: '#ecfeff', icon: Search },
+      accepted:   { color: '#16a34a', bg: '#f0fdf4', icon: CheckSquare },
+      rejected:   { color: '#dc2626', bg: '#fef2f2', icon: XCircle },
+      warning:    { color: '#ea580c', bg: '#fff7ed', icon: AlertTriangle },
+      end:        { color: '#475569', bg: '#f8fafc', icon: CheckCircle },
+    };
+    Object.keys(fallbackConfig).forEach(key => {
+      const configItem = raw[key] || {};
+      const base = (fallbackConfig as any)[key];
+      result[key] = {
+        color: base.color,
+        bg: base.bg,
+        icon: TIMELINE_ICONS[configItem.icon] || base.icon,
+        label: configItem.label || base.label || key,
+      };
+    });
+    return result;
+  }, [uiConfig]);
+
+  if (sessions.isLoading || uiConfigQuery.isLoading) {
+    return <LoadingOverlay />;
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
@@ -557,7 +587,7 @@ export default function ReplayCenter() {
 
         {/* Model breakdown cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
-          {Object.entries(MODEL_COLORS).map(([model, color]) => {
+          {Object.entries(modelColors).map(([model, color]) => {
             const count = data.filter((r: any) => r.model === model).length;
             const cost = data.filter((r: any) => r.model === model).reduce((s: number, r: any) => s + r.cost, 0);
             const active = modelFilter === model;
@@ -568,7 +598,7 @@ export default function ReplayCenter() {
                 onClick={() => setModelFilter(active ? 'all' : model)}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: color as string }} />
                   <span className="text-xs font-semibold text-gray-700 truncate">{model.split(' ')[0]}</span>
                 </div>
                 <p className="text-lg font-bold text-gray-900">{count}</p>
@@ -594,13 +624,13 @@ export default function ReplayCenter() {
 
         {/* Sessions Table */}
         <SectionCard>
-          {sessions.isLoading ? <LoadingOverlay /> : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <EmptyState icon={<Search size={28} />} title="No sessions found" description="Try adjusting your search or filters" />
           ) : (
             <>
               <div className="divide-y divide-gray-50">
                 {paged.map((session: any, i: number) => {
-                  const modelColor = MODEL_COLORS[session.model] || '#0078d4';
+                  const modelColor = modelColors[session.model] || '#0078d4';
                   const acceptance = ACCEPTANCE_CONFIG[session.acceptance];
                   return (
                     <motion.div
@@ -612,8 +642,8 @@ export default function ReplayCenter() {
                     >
                       <div className="flex-shrink-0">
                         {session.success
-                          ? <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><CheckCircle size={16} className="text-emerald-600" /></div>
-                          : <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center"><XCircle size={16} className="text-red-500" /></div>}
+                           ? <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><CheckCircle size={16} className="text-emerald-600" /></div>
+                           : <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center"><XCircle size={16} className="text-red-500" /></div>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
@@ -684,6 +714,8 @@ export default function ReplayCenter() {
           onClose={() => setSelectedSession(null)}
           allSessions={filtered}
           onNavigate={s => setSelectedSession(s)}
+          modelColors={modelColors}
+          timelineConfigMap={timelineConfigMap}
         />
       )}
     </div>

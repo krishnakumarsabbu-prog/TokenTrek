@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ShoppingBag, Star, Zap, Users, Search, CheckCircle, Tag, TrendingUp, Copy, Share2, Check, LayoutGrid, List, Award, Target, BarChart2, X, Eye } from 'lucide-react';
-import { fetchMarketplacePrompts } from '../api/analytics';
+import { fetchMarketplacePrompts, fetchUIConfig } from '../api/analytics';
 import { SectionCard, SearchBar, Select, Pagination, KpiCard, FilterBar, LoadingOverlay, EmptyState, ProgressBar } from '../components/ui';
 
 const PAGE_SIZE = 9;
@@ -20,24 +20,6 @@ interface MarketplacePrompt {
   tags: string[];
   verified: boolean;
 }
-
-const CATEGORY_COLORS: Record<string, { bg: string; color: string; dot: string }> = {
-  Engineering:   { bg: '#eff6ff', color: '#2563eb', dot: '#3b82f6' },
-  Testing:       { bg: '#f0fdf4', color: '#16a34a', dot: '#22c55e' },
-  Database:      { bg: '#fef9c3', color: '#a16207', dot: '#eab308' },
-  Documentation: { bg: '#f0f9ff', color: '#0369a1', dot: '#0ea5e9' },
-  Frontend:      { bg: '#ecfdf5', color: '#059669', dot: '#10b981' },
-  Security:      { bg: '#fef2f2', color: '#dc2626', dot: '#ef4444' },
-  Performance:   { bg: '#fff7ed', color: '#ea580c', dot: '#f97316' },
-  DevOps:        { bg: '#f0f9ff', color: '#0369a1', dot: '#38bdf8' },
-  Data:          { bg: '#fdf4ff', color: '#7e22ce', dot: '#a855f7' },
-  Architecture:  { bg: '#f8fafc', color: '#475569', dot: '#64748b' },
-};
-
-const CATEGORIES = [
-  'all', 'Engineering', 'Testing', 'Database', 'Documentation',
-  'Frontend', 'Security', 'Performance', 'DevOps', 'Data', 'Architecture',
-];
 
 const SORT_OPTIONS = [
   { value: 'uses',    label: 'Most Used' },
@@ -126,8 +108,8 @@ function ShareButton({ prompt }: { prompt: MarketplacePrompt }) {
   );
 }
 
-function PromptDetailModal({ prompt, onClose }: { prompt: MarketplacePrompt; onClose: () => void }) {
-  const catColors = CATEGORY_COLORS[prompt.category] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
+function PromptDetailModal({ prompt, categoryColors, onClose }: { prompt: MarketplacePrompt; categoryColors: any; onClose: () => void }) {
+  const catColors = (categoryColors && categoryColors[prompt.category]) || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -217,8 +199,8 @@ function PromptDetailModal({ prompt, onClose }: { prompt: MarketplacePrompt; onC
   );
 }
 
-function PromptCard({ p, onOpen }: { p: MarketplacePrompt; onOpen: () => void }) {
-  const catColors = CATEGORY_COLORS[p.category] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
+function PromptCard({ p, categoryColors, onOpen }: { p: MarketplacePrompt; categoryColors: any; onOpen: () => void }) {
+  const catColors = (categoryColors && categoryColors[p.category]) || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
   const [saved, setSaved] = useState(false);
 
   return (
@@ -304,9 +286,14 @@ export default function PromptMarketplace() {
   const [page, setPage] = useState(1);
   const [activePrompt, setActivePrompt] = useState<MarketplacePrompt | null>(null);
 
-  const { data = [], isLoading } = useQuery<MarketplacePrompt[]>({
+  const { data = [], isLoading: promptsLoading } = useQuery<MarketplacePrompt[]>({
     queryKey: ['marketplace'],
     queryFn: fetchMarketplacePrompts,
+  });
+
+  const { data: uiConfig, isLoading: configLoading } = useQuery({
+    queryKey: ['ui-config'],
+    queryFn: fetchUIConfig,
   });
 
   const filtered = useMemo(() => {
@@ -331,7 +318,18 @@ export default function PromptMarketplace() {
     return d;
   }, [data, search, category, sortBy]);
 
+  const categoriesList = useMemo(() => {
+    const unique = new Set(data.map(p => p.category));
+    return ['all', ...Array.from(unique)];
+  }, [data]);
+
   const topPrompts = useMemo(() => [...data].sort((a, b) => b.uses - a.uses).slice(0, 3), [data]);
+
+  if (promptsLoading || configLoading) {
+    return <LoadingOverlay />;
+  }
+
+  const categoryColors = uiConfig?.categoryColors ?? {};
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -366,7 +364,7 @@ export default function PromptMarketplace() {
         </div>
 
         {/* Top Prompts Banner */}
-        {!isLoading && topPrompts.length > 0 && (
+        {topPrompts.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
               <Award size={15} className="text-amber-500" />
@@ -374,7 +372,7 @@ export default function PromptMarketplace() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {topPrompts.map((p, i) => {
-                const catColors = CATEGORY_COLORS[p.category] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
+                const catColors = categoryColors[p.category] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
                 const medals = ['🥇', '🥈', '🥉'];
                 return (
                   <div
@@ -403,7 +401,7 @@ export default function PromptMarketplace() {
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <FilterBar>
             <SearchBar value={search} onChange={handleSearch} placeholder="Search prompts, tags, authors..." className="w-64" />
-            <Select value={category} onChange={handleCategory} options={CATEGORIES.map(c => ({ value: c, label: c === 'all' ? 'All Categories' : c }))} />
+            <Select value={category} onChange={handleCategory} options={categoriesList.map(c => ({ value: c, label: c === 'all' ? 'All Categories' : c }))} />
             <Select value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} />
           </FilterBar>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
@@ -418,8 +416,8 @@ export default function PromptMarketplace() {
 
         {/* Category Pills */}
         <div className="flex gap-2 flex-wrap mb-6">
-          {CATEGORIES.filter(c => c !== 'all').map(c => {
-            const colors = CATEGORY_COLORS[c] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
+          {categoriesList.filter(c => c !== 'all').map(c => {
+            const colors = categoryColors[c] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
             const active = category === c;
             const count = data.filter(p => p.category === c).length;
             return (
@@ -463,7 +461,7 @@ export default function PromptMarketplace() {
         </div>
 
         {/* Content */}
-        {isLoading ? <LoadingOverlay /> : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <EmptyState
             icon={<Search size={28} />}
             title="No prompts found"
@@ -479,7 +477,7 @@ export default function PromptMarketplace() {
             {view === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
                 {paged.map(p => (
-                  <PromptCard key={p.id} p={p} onOpen={() => setActivePrompt(p)} />
+                  <PromptCard key={p.id} p={p} categoryColors={categoryColors} onOpen={() => setActivePrompt(p)} />
                 ))}
               </div>
             ) : (
@@ -501,7 +499,7 @@ export default function PromptMarketplace() {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {paged.map(p => {
-                        const catColors = CATEGORY_COLORS[p.category] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
+                        const catColors = categoryColors[p.category] || { bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' };
                         return (
                           <tr key={p.id} className="hover:bg-blue-50/30 transition-colors cursor-pointer" onClick={() => setActivePrompt(p)}>
                             <td className="px-5 py-3.5 max-w-xs">
@@ -562,7 +560,7 @@ export default function PromptMarketplace() {
       </div>
 
       {activePrompt && (
-        <PromptDetailModal prompt={activePrompt} onClose={() => setActivePrompt(null)} />
+        <PromptDetailModal prompt={activePrompt} categoryColors={categoryColors} onClose={() => setActivePrompt(null)} />
       )}
     </div>
   );

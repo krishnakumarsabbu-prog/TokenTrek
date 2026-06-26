@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { seed } from './seed';
+import { loadGitStatsFromCSV } from './seed';
 import overviewRouter from './routes/overview';
 import dataRouter from './routes/data';
 import analyticsRouter from './routes/analytics';
@@ -13,7 +13,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 
-seed();
+// Only load real CSV-based git stats — no fake seed data
+loadGitStatsFromCSV();
 
 app.use('/api/overview', overviewRouter);
 app.use('/api/data', dataRouter);
@@ -26,5 +27,5 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[TokenTrek] API → http://localhost:${PORT}`);
+  console.log(`[TokenTrek] API → http://localhost:${PORT} (store starts empty — no seed data)`);
 });
