@@ -1,6 +1,15 @@
 import { Router } from 'express';
 import { store, DevinSession, DevinDeveloperStat, DevinTeamStat } from '../db';
 import { recalculateFromDevin } from '../analyticsEngine';
+import {
+  upsertTeam,
+  upsertDeveloper,
+  upsertDeveloperMetrics,
+  upsertTeamMetrics,
+  insertSessionsBatch,
+  getAllSessions,
+  RawSessionInput,
+} from '../sqliteDb';
 
 let _idSeq = 1;
 function newId() { return `devin-${Date.now()}-${_idSeq++}`; }
@@ -92,6 +101,17 @@ router.get('/stats', (_req, res) => {
   });
 });
 
+// GET /api/devin/sessions
+router.get('/sessions', (_req, res) => {
+  try {
+    const sessions = getAllSessions();
+    res.json(sessions);
+  } catch (err) {
+    console.error('[devin/sessions]', err);
+    res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+});
+
 // GET /api/devin/developers
 router.get('/developers', (_req, res) => {
   const sorted = [...store.devin_developer_stats].sort((a, b) => b.ai_score - a.ai_score);
@@ -144,27 +164,116 @@ router.post('/upload', (req, res) => {
     return res.status(400).json({ error: 'sessions array is required and must not be empty' });
   }
 
-  const imported: DevinSession[] = rawSessions.map((s: any) => ({
-    id: newId(),
-    team_id: team_name || s.org_name || 'Unknown',
-    user_name: s.user_name || '',
-    user_email: s.user_email || '',
-    session_name: s.session_name || '',
-    created_at: s.created_at || new Date().toISOString(),
-    acu_used: Number(s.acu_used) || 0,
-    session_url: s.url || '',
-    org_id: s.org_id || '',
-    org_name: s.org_name || '',
-    category: s.category || null,
-    subcategory: s.subcategory || null,
-    pull_requests: Array.isArray(s.pull_requests) ? s.pull_requests : [],
-  }));
+  try {
+    // 1. Resolve or create team in SQLite
+    const teamId = upsertTeam(team_name || rawSessions[0]?.org_name || 'Unknown');
 
-  store.devin_sessions.push(...imported);
-  recomputeDevinStats();
-  recalculateFromDevin();
+    // 2. Resolve or create developers in SQLite
+    const devEmailToDbId = new Map<string, number>();
+    for (const s of rawSessions) {
+      const email = (s.user_email || '').toLowerCase();
+      if (!email || devEmailToDbId.has(email)) continue;
+      const dbDevId = upsertDeveloper(s.user_name || email, email, teamId);
+      devEmailToDbId.set(email, dbDevId);
+    }
 
-  res.json({ imported: imported.length, total_sessions: store.devin_sessions.length });
+    // 3. Build session records for SQLite insertion
+    const toInsert: RawSessionInput[] = rawSessions.map((s: any) => ({
+      id: newId(),
+      team_id: teamId,
+      user_name: s.user_name || '',
+      user_email: s.user_email || '',
+      session_name: s.session_name || '',
+      created_at: s.created_at || new Date().toISOString(),
+      acu_used: Number(s.acu_used) || 0,
+      session_url: s.url || s.session_url || '',
+      org_id: s.org_id || null,
+      org_name: s.org_name || null,
+      category: s.category || null,
+      subcategory: s.subcategory || null,
+      pull_requests: Array.isArray(s.pull_requests) ? s.pull_requests : [],
+    }));
+
+    // 4. Persist to SQLite (idempotent — skips existing session_urls)
+    const inserted = insertSessionsBatch(toInsert);
+
+    // 5. Reload all sessions from DB into in-memory store
+    const allDbSessions = getAllSessions();
+    store.devin_sessions = allDbSessions.map(s => ({
+      id: s.id,
+      team_id: String(s.team_id),
+      user_name: s.user_name,
+      user_email: s.user_email,
+      session_name: s.session_name,
+      created_at: s.created_at,
+      acu_used: s.acu_used,
+      session_url: s.session_url,
+      org_id: s.org_id ?? '',
+      org_name: s.org_name ?? '',
+      category: s.category,
+      subcategory: s.subcategory,
+      pull_requests: s.pull_requests,
+    } as DevinSession));
+
+    // 6. Recompute in-memory derived stats
+    recomputeDevinStats();
+    recalculateFromDevin();
+
+    // 7. Persist aggregate metrics to SQLite
+    persistMetricsToDb();
+
+    res.json({
+      imported: inserted,
+      skipped: rawSessions.length - inserted,
+      total_sessions: store.devin_sessions.length,
+    });
+  } catch (err) {
+    console.error('[devin/upload]', err);
+    res.status(500).json({ error: 'Upload failed', detail: String(err) });
+  }
 });
+
+/**
+ * After recomputeDevinStats() and recalculateFromDevin(), persist the
+ * freshly computed aggregate metrics to SQLite so they can be queried
+ * independently if needed.
+ */
+function persistMetricsToDb(): void {
+  try {
+    // Developer metrics
+    for (const stat of store.devin_developer_stats) {
+      // Find developer db id via email
+      const dbDevs = store.developers as Array<any>;
+      const dev = dbDevs.find(d => d.email && d.email.toLowerCase() === stat.user_email.toLowerCase());
+      if (!dev) continue;
+      upsertDeveloperMetrics(dev.id, {
+        total_sessions: stat.sessions,
+        total_acu: stat.acu_used,
+        total_prs: stat.total_prs,
+        merged_prs: stat.merged_prs,
+        success_rate: stat.total_prs > 0 ? Math.round((stat.merged_prs / stat.total_prs) * 100) : 0,
+        ai_score: stat.ai_score,
+      });
+    }
+
+    // Team metrics
+    for (const ts of store.devin_team_stats) {
+      // Find team id in memory store
+      const t = store.teams.find(t => t.name === ts.team_name);
+      if (!t) continue;
+      upsertTeamMetrics(t.id, {
+        developer_count: ts.developers,
+        total_sessions: ts.sessions,
+        total_acu: ts.acu_used,
+        total_prs: ts.total_prs,
+        merged_prs: ts.merged_prs,
+        ai_score: ts.ai_score,
+      });
+    }
+  } catch (err) {
+    // Non-fatal: metrics are always recomputed from sessions on startup
+    console.warn('[devin] persistMetricsToDb warning:', err);
+  }
+}
 
 export default router;
