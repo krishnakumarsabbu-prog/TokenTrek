@@ -4,7 +4,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Bot, Users, Cpu, GitPullRequest, CircleCheck as CheckCircle, TrendingUp, Activity, Search } from 'lucide-react';
+import { Bot, Users, Cpu, GitPullRequest, CheckCircle, TrendingUp, Activity, Search } from 'lucide-react';
 import { fetchDevinStats, fetchDevinDevelopers, fetchDevinTrends, fetchDevinCategories } from '../api/devin';
 import { SectionCard, PageHeader, KpiCard, EmptyState, Badge, SearchBar, Select, Pagination } from '../components/ui';
 

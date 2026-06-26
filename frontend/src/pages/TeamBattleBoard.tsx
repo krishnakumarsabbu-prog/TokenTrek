@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, DollarSign, Zap, Clock, Crown, Swords, ArrowUpRight, ArrowDownRight, ChartBar as BarChart2, Star, Target, Activity, Bot, GitPullRequest } from 'lucide-react';
+import { Trophy, DollarSign, Zap, Clock, Crown, Swords, ArrowUpRight, ArrowDownRight, BarChart2, Star, Target, Activity, Bot, GitPullRequest } from 'lucide-react';
 import { SectionCard, PageHeader, KpiCard, ProgressBar, EmptyState, LoadingOverlay } from '../components/ui';
 import { fetchLeagueTeams } from '../api/analytics';
 import { fetchDevinTeams } from '../api/devin';

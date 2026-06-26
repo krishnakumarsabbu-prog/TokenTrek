@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, CircleCheck as CheckCircle, Circle as XCircle, Eye, EyeOff, ChevronDown, ChevronUp, Download, CircleAlert as AlertCircle, Bot, File as FileJson } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, XCircle, Eye, EyeOff, ChevronDown, ChevronUp, Download, AlertCircle, Bot, File as FileJson } from 'lucide-react';
 import { importData, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
 import { uploadDevinTelemetry } from '../api/devin';
 import { SectionCard, Badge } from '../components/ui';
