@@ -16,6 +16,7 @@ import AILeague from './pages/AILeague';
 import DeveloperXP from './pages/DeveloperXP';
 import TeamBattleBoard from './pages/TeamBattleBoard';
 import GitStats from './pages/GitStats';
+import DevinStats from './pages/DevinStats';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
           <Route path="git-stats" element={<GitStats />} />
+          <Route path="devin-stats" element={<DevinStats />} />
           <Route path="*" element={<Navigate to="/overview" replace />} />
         </Route>
       </Routes>

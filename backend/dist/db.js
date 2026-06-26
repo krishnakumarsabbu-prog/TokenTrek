@@ -17,4 +17,7 @@ exports.store = {
     import_history: [],
     scrum_records: [],
     kanban_records: [],
+    devin_sessions: [],
+    devin_developer_stats: [],
+    devin_team_stats: [],
 };

@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Users, DollarSign, TrendingUp, Activity, ArrowUpRight, Download } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Activity, ArrowUpRight, Download, Bot } from 'lucide-react';
 import { fetchLeagueTeams, fetchUIConfig } from '../api/analytics';
+import { fetchDevinTeams } from '../api/devin';
 import { SectionCard, SearchBar, Select, Pagination, KpiCard, Badge, Trend, FilterBar, LoadingOverlay, EmptyState, ProgressBar, PageHeader, Avatar } from '../components/ui';
 
 const PAGE_SIZE = 8;
@@ -24,6 +25,11 @@ export default function Teams() {
     queryFn: fetchLeagueTeams,
   });
 
+  const { data: devinTeams = [] } = useQuery({
+    queryKey: ['devin-teams'],
+    queryFn: fetchDevinTeams,
+  });
+
   const { data: uiConfig, isLoading: configLoading } = useQuery({
     queryKey: ['ui-config'],
     queryFn: fetchUIConfig,
@@ -37,20 +43,29 @@ export default function Teams() {
   );
 
   // Normalize league team data to component shape
-  const teams = useMemo(() => (rawTeams as any[]).map((t: any, i: number) => ({
-    id: i + 1,
-    name: t.name ?? '',
-    members: t.size ?? 0,
-    cost: t.costSaved ?? 0,
-    change: t.weeklyChange ?? 0,
-    requests: t.totalUsage ?? 0,
-    tokens: (t.totalUsage ?? 0) * 45,
-    platform: 'Various',              // platform per team not yet tracked
-    budget: Math.round((t.costSaved ?? 0) * 1.25),
-    utilization: t.adoptionScore ?? 0,
-    head: '',
-    headAvatar: t.name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2) ?? '??',
-  })), [rawTeams]);
+  const teams = useMemo(() => (rawTeams as any[]).map((t: any, i: number) => {
+    const devinData = (devinTeams as any[]).find((dt: any) =>
+      dt.team_name.toLowerCase().includes(t.name?.toLowerCase()?.split(' ')[0]?.toLowerCase() || '') ||
+      t.name?.toLowerCase().includes(dt.team_name?.toLowerCase()?.split(' ')[0]?.toLowerCase() || '')
+    );
+    return {
+      id: i + 1,
+      name: t.name ?? '',
+      members: t.size ?? 0,
+      cost: t.costSaved ?? 0,
+      change: t.weeklyChange ?? 0,
+      requests: t.totalUsage ?? 0,
+      tokens: (t.totalUsage ?? 0) * 45,
+      platform: 'Various',
+      budget: Math.round((t.costSaved ?? 0) * 1.25),
+      utilization: t.adoptionScore ?? 0,
+      head: '',
+      headAvatar: t.name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2) ?? '??',
+      devinSessions: devinData?.sessions ?? 0,
+      devinMergedPRs: devinData?.merged_prs ?? 0,
+      devinAiScore: devinData?.ai_score ?? 0,
+    };
+  }), [rawTeams, devinTeams]);
 
   const filtered = useMemo(() => {
     let data = [...teams];
@@ -60,6 +75,8 @@ export default function Teams() {
       if (sortBy === 'members') return b.members - a.members;
       if (sortBy === 'requests') return b.requests - a.requests;
       if (sortBy === 'utilization') return b.utilization - a.utilization;
+      if (sortBy === 'devinSessions') return b.devinSessions - a.devinSessions;
+      if (sortBy === 'devinAiScore') return b.devinAiScore - a.devinAiScore;
       return 0;
     });
     return data;
@@ -170,6 +187,8 @@ export default function Teams() {
                 { value: 'members', label: 'Sort: Members' },
                 { value: 'requests', label: 'Sort: Usage' },
                 { value: 'utilization', label: 'Sort: AI Adoption' },
+                { value: 'devinSessions', label: 'Sort: Devin Sessions' },
+                { value: 'devinAiScore', label: 'Sort: AI Score' },
               ]} />
             </div>
 
@@ -188,6 +207,9 @@ export default function Teams() {
                           <th className="table-header-cell text-right">AI Cost</th>
                           <th className="table-header-cell text-right">Change</th>
                           <th className="table-header-cell text-right">Usage</th>
+                          <th className="table-header-cell text-right">Devin Sessions</th>
+                          <th className="table-header-cell text-right">Merged PR</th>
+                          <th className="table-header-cell text-right">AI Score</th>
                           <th className="table-header-cell min-w-[150px]">AI Adoption</th>
                         </tr>
                       </thead>
@@ -222,6 +244,30 @@ export default function Teams() {
                               </div>
                             </td>
                             <td className="table-cell text-right font-semibold" style={{ color: '#4a6480' }}>{fmt(t.requests)}</td>
+                            <td className="table-cell text-right">
+                              {t.devinSessions > 0 ? (
+                                <div className="flex items-center justify-end gap-1">
+                                  <Bot size={11} style={{ color: '#0078d4' }} />
+                                  <span className="font-semibold" style={{ color: '#0078d4' }}>{t.devinSessions}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs" style={{ color: '#8ba3be' }}>—</span>
+                              )}
+                            </td>
+                            <td className="table-cell text-right">
+                              {t.devinMergedPRs > 0 ? (
+                                <Badge variant="green">{t.devinMergedPRs}</Badge>
+                              ) : (
+                                <span className="text-xs" style={{ color: '#8ba3be' }}>—</span>
+                              )}
+                            </td>
+                            <td className="table-cell text-right">
+                              {t.devinAiScore > 0 ? (
+                                <span className="text-sm font-bold" style={{ color: '#e07b39' }}>{t.devinAiScore}</span>
+                              ) : (
+                                <span className="text-xs" style={{ color: '#8ba3be' }}>—</span>
+                              )}
+                            </td>
                             <td className="table-cell">
                               <div className="flex items-center gap-2.5">
                                 <ProgressBar

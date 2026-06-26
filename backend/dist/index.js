@@ -11,19 +11,22 @@ const data_1 = __importDefault(require("./routes/data"));
 const analytics_1 = __importDefault(require("./routes/analytics"));
 const league_1 = __importDefault(require("./routes/league"));
 const git_1 = __importDefault(require("./routes/git"));
+const devin_1 = __importDefault(require("./routes/devin"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
 app.use((0, cors_1.default)({ origin: '*' }));
 app.use(express_1.default.json({ limit: '10mb' }));
-(0, seed_1.seed)();
+// Only load real CSV-based git stats — no fake seed data
+(0, seed_1.loadGitStatsFromCSV)();
 app.use('/api/overview', overview_1.default);
 app.use('/api/data', data_1.default);
 app.use('/api/analytics', analytics_1.default);
 app.use('/api/league', league_1.default);
 app.use('/api/git', git_1.default);
+app.use('/api/devin', devin_1.default);
 app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 app.listen(PORT, () => {
-    console.log(`[TokenTrek] API → http://localhost:${PORT}`);
+    console.log(`[TokenTrek] API → http://localhost:${PORT} (store starts empty — no seed data)`);
 });

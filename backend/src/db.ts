@@ -54,6 +54,46 @@ export interface KanbanRecord {
   l2: string;
 }
 
+export interface DevinSession {
+  id: string;
+  team_id: string;
+  user_name: string;
+  user_email: string;
+  session_name: string;
+  created_at: string;
+  acu_used: number;
+  session_url: string;
+  org_id: string;
+  org_name: string;
+  category: string | null;
+  subcategory: string | null;
+  pull_requests: { pr_url: string; pr_status: string }[];
+}
+
+export interface DevinDeveloperStat {
+  user_email: string;
+  user_name: string;
+  team_name: string;
+  sessions: number;
+  acu_used: number;
+  total_prs: number;
+  merged_prs: number;
+  open_prs: number;
+  failed_prs: number;
+  categories: string[];
+  ai_score: number;
+}
+
+export interface DevinTeamStat {
+  team_name: string;
+  sessions: number;
+  acu_used: number;
+  total_prs: number;
+  merged_prs: number;
+  developers: number;
+  ai_score: number;
+}
+
 export const store: {
   platforms: Platform[];
   teams: Team[];
@@ -69,6 +109,9 @@ export const store: {
   import_history: ImportRecord[];
   scrum_records: ScrumRecord[];
   kanban_records: KanbanRecord[];
+  devin_sessions: DevinSession[];
+  devin_developer_stats: DevinDeveloperStat[];
+  devin_team_stats: DevinTeamStat[];
 } = {
   platforms: [],
   teams: [],
@@ -84,4 +127,7 @@ export const store: {
   import_history: [],
   scrum_records: [],
   kanban_records: [],
+  devin_sessions: [],
+  devin_developer_stats: [],
+  devin_team_stats: [],
 };

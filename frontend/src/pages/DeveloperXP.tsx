@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CheckCircle2, Target, ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CircleCheck as CheckCircle2, Target, ChevronUp, ChevronDown, Search, Bot, GitPullRequest } from 'lucide-react';
 import { fetchDeveloperXP } from '../api/analytics';
+import { fetchDevinDevelopers } from '../api/devin';
 import { Avatar, PageHeader, SectionCard, LoadingOverlay, SearchBar, Select, Pagination } from '../components/ui';
 
 const PAGE_SIZE = 9;
@@ -389,6 +390,7 @@ const TEAM_ALL = 'All Teams';
 
 export default function DeveloperXP() {
   const { data, isLoading } = useQuery<DevXP[]>({ queryKey: ['developer-xp'], queryFn: fetchDeveloperXP });
+  const { data: devinDevs = [] } = useQuery({ queryKey: ['devin-developers'], queryFn: fetchDevinDevelopers });
 
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState('All Levels');
@@ -576,6 +578,94 @@ export default function DeveloperXP() {
                 );
               })}
             </div>
+
+            {/* Devin XP Rewards */}
+            {(devinDevs as any[]).length > 0 && (
+              <SectionCard title="Devin XP Rewards" action={
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: '#eff6ff', color: '#0078d4' }}>
+                  <Bot size={11} /> Devin Activities
+                </div>
+              }>
+                <div className="p-5 space-y-4">
+                  {/* XP activity breakdown */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    {[
+                      { label: 'New Devin Session', icon: Bot, xp: '+5 XP', color: '#0078d4', bg: '#eff6ff', desc: 'per session started' },
+                      { label: 'Merged PR via Devin', icon: GitPullRequest, xp: '+20 XP', color: '#10b981', bg: '#f0fdf4', desc: 'per merged pull request' },
+                      { label: 'High AI Efficiency', icon: Zap, xp: '+10 XP', color: '#e07b39', bg: '#fff7ed', desc: 'when efficiency ≥ 80%' },
+                    ].map(item => (
+                      <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: '#e5eaf0' }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: item.bg }}>
+                          <item.icon size={16} style={{ color: item.color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold" style={{ color: '#0d1f30' }}>{item.label}</p>
+                          <p className="text-xs" style={{ color: '#8ba3be' }}>{item.desc}</p>
+                        </div>
+                        <span className="text-sm font-bold flex-shrink-0" style={{ color: item.color }}>{item.xp}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Devin badges per developer */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: '#f0f4f8' }}>
+                          <th className="px-4 py-2 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Developer</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>Sessions</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>Merged PRs</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>Devin XP</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Badges</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(devinDevs as any[]).slice(0, 8).map((dev: any) => {
+                          const devinXP = dev.sessions * 5 + dev.merged_prs * 20;
+                          const badges: string[] = [];
+                          if (dev.sessions >= 1) badges.push('Devin Explorer');
+                          if (dev.merged_prs >= 1) badges.push('AI Accelerator');
+                          if (dev.ai_score >= 50) badges.push('AI Champion');
+                          if (dev.categories?.some((c: string) => c.includes('migration'))) badges.push('Migration Master');
+                          const initials = (dev.user_name || dev.user_email).split(/[.\s@]/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                          return (
+                            <tr key={dev.user_email} className="border-b transition-colors" style={{ borderColor: '#f0f4f8' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = '#f7fafd')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                    style={{ background: '#0078d4' }}>
+                                    {initials}
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold" style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
+                                    <p className="text-xs" style={{ color: '#8ba3be' }}>{dev.team_name}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-right font-semibold text-xs" style={{ color: '#4a6480' }}>{dev.sessions}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-xs" style={{ color: '#10b981' }}>{dev.merged_prs}</td>
+                              <td className="px-4 py-3 text-right font-bold text-xs" style={{ color: '#0078d4' }}>+{devinXP} XP</td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-1">
+                                  {badges.map(badge => (
+                                    <span key={badge} className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                      style={{ background: '#eff6ff', color: '#0078d4', border: '1px solid #bfdbfe' }}>
+                                      {badge}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </SectionCard>
+            )}
 
             {/* Filters */}
             <div className="flex items-center justify-between gap-3 flex-wrap">

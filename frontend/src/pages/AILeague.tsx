@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Star, Zap, TrendingUp, TrendingDown, Crown, Award, Target, DollarSign, Users, ArrowUpRight, ArrowDownRight, Flame, Shield } from 'lucide-react';
+import { Trophy, Star, Zap, TrendingUp, TrendingDown, Crown, Award, Target, DollarSign, Users, ArrowUpRight, ArrowDownRight, Flame, Shield, Bot, GitPullRequest } from 'lucide-react';
 import { fetchDevLeaderboard, fetchTeamLeaderboard, fetchChampions, DevLeaderboardEntry, TeamLeaderboardEntry } from '../api/league';
 import { fetchUIConfig } from '../api/analytics';
+import { fetchDevinDevelopers } from '../api/devin';
 import { SectionCard, Avatar, ProgressBar, Tabs, PageHeader, KpiCard, Badge } from '../components/ui';
 
 const MEDAL_CONFIG = [
@@ -380,6 +381,11 @@ export default function AILeague() {
     queryFn: fetchChampions,
   });
 
+  const { data: devinDevelopers = [] } = useQuery({
+    queryKey: ['devin-developers'],
+    queryFn: fetchDevinDevelopers,
+  });
+
   const topDev = devLeaderboard[0];
   const totalCostSaved = devLeaderboard.reduce((s, d) => s + d.costSaved, 0);
   const avgScore = devLeaderboard.length ? Math.round(devLeaderboard.reduce((s, d) => s + d.totalScore, 0) / devLeaderboard.length) : 0;
@@ -622,6 +628,69 @@ export default function AILeague() {
             ))}
           </div>
         </SectionCard>
+
+        {/* Devin AI Champions leaderboard */}
+        {(devinDevelopers as any[]).length > 0 && (
+          <SectionCard title="Devin AI Champions" action={
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: '#eff6ff', color: '#0078d4' }}>
+              <Bot size={11} /> Devin Sessions
+            </div>
+          }>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: '#f0f4f8' }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Rank</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Developer</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>AI Score</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>Sessions</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>Merged PRs</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>ACU Used</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>AI Adoption</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(devinDevelopers as any[]).slice(0, 10).map((dev: any, i: number) => {
+                    const initials = (dev.user_name || dev.user_email).split(/[.\s@]/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                    const successRate = dev.total_prs > 0 ? Math.round((dev.merged_prs / dev.total_prs) * 100) : 0;
+                    return (
+                      <tr key={dev.user_email} className="border-b transition-colors" style={{ borderColor: '#f0f4f8' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#f7fafd'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold" style={{ color: i < 3 ? '#d97706' : '#8ba3be' }}>{dev.rank}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                              style={{ background: ['#0078d4', '#10b981', '#e07b39', '#f59e0b'][i % 4] }}>
+                              {initials}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
+                              <p className="text-xs" style={{ color: '#8ba3be' }}>{dev.team_name}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold" style={{ color: '#0078d4' }}>{dev.ai_score}</td>
+                        <td className="px-4 py-3 text-right font-semibold" style={{ color: '#4a6480' }}>{dev.sessions}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Badge variant="green">{dev.merged_prs}</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold" style={{ color: '#4a6480' }}>{Math.round(dev.acu_used * 100) / 100}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-xs font-bold" style={{ color: successRate >= 80 ? '#059669' : successRate >= 50 ? '#d97706' : '#8ba3be' }}>
+                            {successRate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
+        )}
 
       </div>
     </div>

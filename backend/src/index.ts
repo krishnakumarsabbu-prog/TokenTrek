@@ -6,6 +6,7 @@ import dataRouter from './routes/data';
 import analyticsRouter from './routes/analytics';
 import leagueRouter from './routes/league';
 import gitRouter from './routes/git';
+import devinRouter from './routes/devin';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,6 +22,7 @@ app.use('/api/data', dataRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/league', leagueRouter);
 app.use('/api/git', gitRouter);
+app.use('/api/devin', devinRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

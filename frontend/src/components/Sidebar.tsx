@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, PlayCircle, FileText, Settings, HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap, Swords, GitCommit } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, MessageSquare, Cpu, DollarSign, Trash2, ShoppingBag, CirclePlay as PlayCircle, FileText, Settings, Circle as HelpCircle, ChevronLeft, ChevronRight, ChevronDown, Upload, Trophy, Zap, Swords, GitCommitVertical as GitCommit, Bot } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const NAV_GROUPS = [
@@ -19,6 +19,7 @@ const NAV_GROUPS = [
       { icon: DollarSign, label: 'Cost Center', to: '/cost-center' },
       { icon: Trash2, label: 'AI Waste Detector', to: '/waste' },
       { icon: GitCommit, label: 'Git Stats', to: '/git-stats' },
+      { icon: Bot, label: 'Devin Stats', to: '/devin-stats' },
     ],
   },
   {

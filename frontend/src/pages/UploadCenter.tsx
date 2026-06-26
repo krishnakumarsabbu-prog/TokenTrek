@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, Eye, EyeOff, ChevronDown, ChevronUp, Download, Trash2, AlertCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, CircleCheck as CheckCircle, Circle as XCircle, Eye, EyeOff, ChevronDown, ChevronUp, Download, CircleAlert as AlertCircle, Bot, File as FileJson } from 'lucide-react';
 import { importData, fetchImportHistory, fetchSchema, downloadTemplate } from '../api/data';
+import { uploadDevinTelemetry } from '../api/devin';
 import { SectionCard, Badge } from '../components/ui';
 
 const ACCEPTED_COLUMNS = new Set([
@@ -42,12 +43,37 @@ export default function UploadCenter() {
   const fileRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
+  // Devin upload state
+  const [devinTeamName, setDevinTeamName] = useState('');
+  const [devinDescription, setDevinDescription] = useState('');
+  const [devinJsonText, setDevinJsonText] = useState('');
+  const [devinFilename, setDevinFilename] = useState('');
+  const [devinParseError, setDevinParseError] = useState('');
+  const [devinParsed, setDevinParsed] = useState<any[] | null>(null);
+  const devinFileRef = useRef<HTMLInputElement>(null);
+
   const history = useQuery({ queryKey: ['import-history'], queryFn: fetchImportHistory });
   const schema = useQuery({ queryKey: ['schema'], queryFn: fetchSchema });
 
   const importMut = useMutation({
     mutationFn: (payload: { filename: string; data: Record<string, any[]> }) => importData(payload),
     onSuccess: () => { qc.invalidateQueries(); setSheets([]); setFilename(''); },
+  });
+
+  const devinMut = useMutation({
+    mutationFn: (payload: { team_name: string; sessions: any[] }) => uploadDevinTelemetry(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['devin-stats'] });
+      qc.invalidateQueries({ queryKey: ['devin-developers'] });
+      qc.invalidateQueries({ queryKey: ['devin-teams'] });
+      qc.invalidateQueries({ queryKey: ['devin-trends'] });
+      qc.invalidateQueries({ queryKey: ['devin-categories'] });
+      setDevinParsed(null);
+      setDevinJsonText('');
+      setDevinFilename('');
+      setDevinTeamName('');
+      setDevinDescription('');
+    },
   });
 
   const parseFile = (file: File) => {
@@ -65,6 +91,31 @@ export default function UploadCenter() {
       setSheets(parsed);
     };
     reader.readAsArrayBuffer(file);
+  };
+
+  const parseDevinFile = (file: File) => {
+    setDevinFilename(file.name);
+    setDevinParseError('');
+    setDevinParsed(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target!.result as string;
+        setDevinJsonText(text);
+        const parsed = JSON.parse(text);
+        const sessions = Array.isArray(parsed) ? parsed : parsed.sessions;
+        if (!Array.isArray(sessions)) throw new Error('JSON must have a "sessions" array or be an array itself');
+        setDevinParsed(sessions);
+      } catch (err: any) {
+        setDevinParseError(err.message || 'Invalid JSON');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDevinImport = () => {
+    if (!devinParsed || !devinTeamName.trim()) return;
+    devinMut.mutate({ team_name: devinTeamName.trim(), sessions: devinParsed });
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -251,6 +302,90 @@ export default function UploadCenter() {
 
           {/* Schema reference */}
           <div className="space-y-4">
+            {/* Devin JSON Upload Card */}
+            <SectionCard title="Upload Devin Telemetry" action={
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: '#eff6ff', color: '#0078d4' }}>
+                <Bot size={11} /> Devin AI
+              </div>
+            }>
+              <div className="p-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Team Name *</label>
+                  <input
+                    type="text"
+                    value={devinTeamName}
+                    onChange={e => setDevinTeamName(e.target.value)}
+                    placeholder="e.g. Notification Platform Team"
+                    className="w-full px-3 py-2 text-xs rounded-lg border outline-none"
+                    style={{ borderColor: '#e5eaf0', background: '#f7fafd', color: '#0d1f30' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Upload Devin JSON *</label>
+                  <div
+                    onClick={() => devinFileRef.current?.click()}
+                    className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all hover:border-blue-300 hover:bg-blue-50/20"
+                    style={{ borderColor: devinFilename ? '#10b981' : '#e5eaf0' }}
+                  >
+                    {devinFilename ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <FileJson size={16} className="text-emerald-500" />
+                        <span className="text-xs font-semibold text-gray-700">{devinFilename}</span>
+                        {devinParsed && <Badge variant="green">{devinParsed.length} sessions</Badge>}
+                      </div>
+                    ) : (
+                      <div>
+                        <Bot size={20} className="mx-auto mb-1 text-gray-300" />
+                        <p className="text-xs text-gray-400">Click to select .json file</p>
+                      </div>
+                    )}
+                    <input
+                      ref={devinFileRef}
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && parseDevinFile(e.target.files[0])}
+                    />
+                  </div>
+                  {devinParseError && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle size={11} /> {devinParseError}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={devinDescription}
+                    onChange={e => setDevinDescription(e.target.value)}
+                    placeholder="Optional description..."
+                    className="w-full px-3 py-2 text-xs rounded-lg border outline-none"
+                    style={{ borderColor: '#e5eaf0', background: '#f7fafd', color: '#0d1f30' }}
+                  />
+                </div>
+                <button
+                  onClick={handleDevinImport}
+                  disabled={!devinParsed || !devinTeamName.trim() || devinMut.isPending}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg text-white transition-all disabled:opacity-40"
+                  style={{ background: '#0078d4' }}
+                >
+                  <Bot size={13} />
+                  {devinMut.isPending ? 'Importing...' : 'Import Devin Sessions'}
+                </button>
+                {devinMut.isSuccess && (
+                  <p className="text-xs text-emerald-600 flex items-center gap-1">
+                    <CheckCircle size={12} /> Imported successfully!
+                  </p>
+                )}
+                {devinMut.isError && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <XCircle size={12} /> Import failed. Check JSON format.
+                  </p>
+                )}
+              </div>
+            </SectionCard>
+
             <SectionCard title="Supported Sheets">
               <div className="divide-y divide-gray-50">
                 {Object.entries(SHEET_DESCRIPTIONS).map(([sheet, desc]) => (
