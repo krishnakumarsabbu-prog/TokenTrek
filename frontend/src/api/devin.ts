@@ -5,6 +5,8 @@ export const fetchDevinDevelopers = () => api.get('/devin/developers').then(r =>
 export const fetchDevinTeams = () => api.get('/devin/teams').then(r => r.data);
 export const fetchDevinTrends = () => api.get('/devin/trends').then(r => r.data);
 export const fetchDevinCategories = () => api.get('/devin/categories').then(r => r.data);
+export const fetchDevinDeveloperSessions = (email: string) =>
+  api.get(`/devin/developer/${encodeURIComponent(email)}/sessions`).then(r => r.data);
 
 export const uploadDevinTelemetry = (payload: { team_name: string; sessions: any[] }) =>
   api.post('/devin/upload', payload).then(r => r.data);

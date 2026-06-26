@@ -273,10 +273,9 @@ export default function DeveloperDetail() {
                     <th className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Session</th>
                     <th className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Date</th>
                     <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>ACU</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>PRs</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold" style={{ color: '#8ba3be' }}>Merged</th>
                     <th className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Category</th>
-                    <th className="px-4 py-2.5 text-center text-xs font-semibold" style={{ color: '#8ba3be' }}>Link</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: '#8ba3be' }}>Pull Requests</th>
+                    <th className="px-4 py-2.5 text-center text-xs font-semibold" style={{ color: '#8ba3be' }}>Session</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -288,22 +287,42 @@ export default function DeveloperDetail() {
                       onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = '#f7fafd'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}
                     >
-                      <td className="px-4 py-3 max-w-[200px]">
+                      <td className="px-4 py-3 max-w-[180px]">
                         <p className="text-xs font-medium truncate" style={{ color: '#0d1f30' }}>{s.session_name || `Session ${i + 1}`}</p>
                       </td>
-                      <td className="px-4 py-3 text-xs" style={{ color: '#4a6480' }}>{s.date}</td>
-                      <td className="px-4 py-3 text-right text-xs font-semibold" style={{ color: '#8b5cf6' }}>{Math.round(s.acu_used * 100) / 100}</td>
-                      <td className="px-4 py-3 text-right text-xs font-semibold" style={{ color: '#4a6480' }}>{s.prs}</td>
-                      <td className="px-4 py-3 text-right">
-                        {s.merged_prs > 0 ? (
-                          <span className="text-xs font-bold" style={{ color: '#10b981' }}>{s.merged_prs}</span>
-                        ) : (
-                          <span className="text-xs" style={{ color: '#c5d4e0' }}>0</span>
-                        )}
-                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#4a6480' }}>{s.date}</td>
+                      <td className="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap" style={{ color: '#8b5cf6' }}>{Math.round(s.acu_used * 100) / 100}</td>
                       <td className="px-4 py-3">
                         {s.category && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f4f8', color: '#4a6480' }}>{s.category}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(s.pull_requests ?? []).length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(s.pull_requests as { pr_url: string; pr_status: string }[]).map((pr, pi) => {
+                              const statusColor = pr.pr_status === 'merged' ? '#059669' : pr.pr_status === 'open' ? '#0078d4' : '#dc2626';
+                              const statusBg   = pr.pr_status === 'merged' ? '#f0fdf4' : pr.pr_status === 'open' ? '#eff6ff' : '#fef2f2';
+                              const repoAndPR  = pr.pr_url.replace(/https?:\/\/[^/]+\//, '').replace(/\/pull\//, ' #');
+                              return (
+                                <a
+                                  key={pi}
+                                  href={pr.pr_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={`${pr.pr_status} — ${pr.pr_url}`}
+                                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold transition-opacity hover:opacity-80"
+                                  style={{ background: statusBg, color: statusColor, textDecoration: 'none' }}
+                                >
+                                  <GitPullRequest size={9} />
+                                  <span className="truncate max-w-[120px]">{repoAndPR}</span>
+                                  <ExternalLink size={8} />
+                                </a>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-xs" style={{ color: '#c5d4e0' }}>No PRs</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">

@@ -2,11 +2,12 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Bot, Users, Cpu, GitPullRequest, CircleCheck as CheckCircle, TrendingUp, Activity, Search } from 'lucide-react';
-import { fetchDevinStats, fetchDevinDevelopers, fetchDevinTrends, fetchDevinCategories } from '../api/devin';
-import { SectionCard, PageHeader, KpiCard, EmptyState, Badge, SearchBar, Select, Pagination } from '../components/ui';
+import { Bot, Users, Cpu, GitPullRequest, CircleCheck as CheckCircle, TrendingUp, Activity, Search, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { fetchDevinStats, fetchDevinDevelopers, fetchDevinTrends, fetchDevinCategories, fetchDevinDeveloperSessions } from '../api/devin';
+import { SectionCard, PageHeader, KpiCard, EmptyState, Badge, Select, Pagination } from '../components/ui';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CHART_COLORS = ['#0078d4', '#10b981', '#e07b39', '#f59e0b', '#0891b2', '#8b5cf6', '#dc2626', '#64748b'];
 const PAGE_SIZE = 10;
@@ -36,10 +37,128 @@ const MEDAL: Record<number, { bg: string; color: string; label: string }> = {
   3: { bg: '#fff7ed', color: '#c2410c', label: '3' },
 };
 
+const PR_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  merged: { bg: '#f0fdf4', color: '#059669' },
+  open:   { bg: '#eff6ff', color: '#0078d4' },
+  failed: { bg: '#fef2f2', color: '#dc2626' },
+  closed: { bg: '#fef2f2', color: '#dc2626' },
+};
+
+function prStyle(status: string) {
+  return PR_STATUS_STYLE[status.toLowerCase()] ?? { bg: '#f0f4f8', color: '#4a6480' };
+}
+
+/** Expandable row showing sessions + PR links for one developer */
+function DevSessionDrawer({ email }: { email: string }) {
+  const { data: sessions = [], isLoading } = useQuery({
+    queryKey: ['devin-dev-sessions', email],
+    queryFn: () => fetchDevinDeveloperSessions(email),
+    staleTime: 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <tr>
+        <td colSpan={9} className="px-6 py-4 text-xs" style={{ color: '#8ba3be', background: '#f7fafd' }}>
+          Loading sessions...
+        </td>
+      </tr>
+    );
+  }
+
+  if ((sessions as any[]).length === 0) {
+    return (
+      <tr>
+        <td colSpan={9} className="px-6 py-4 text-xs" style={{ color: '#8ba3be', background: '#f7fafd' }}>
+          No sessions found.
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr>
+      <td colSpan={9} style={{ background: '#f7fafd', padding: 0 }}>
+        <div className="px-6 py-3">
+          <p className="text-xs font-semibold mb-2" style={{ color: '#4a6480' }}>
+            Sessions ({(sessions as any[]).length})
+          </p>
+          <div className="space-y-2">
+            {(sessions as any[]).map((s: any, si: number) => (
+              <div
+                key={s.id ?? si}
+                className="flex items-start gap-3 p-3 rounded-xl border"
+                style={{ background: '#ffffff', borderColor: '#e5eaf0' }}
+              >
+                {/* Session info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold truncate max-w-[260px]" title={s.session_name} style={{ color: '#0d1f30' }}>
+                      {s.session_name || `Session ${si + 1}`}
+                    </span>
+                    <span className="text-xs" style={{ color: '#8ba3be' }}>{s.date}</span>
+                    <span className="text-xs font-semibold" style={{ color: '#8b5cf6' }}>{fmt2(s.acu_used)} ACU</span>
+                    {s.category && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#f0f4f8', color: '#4a6480' }}>{s.category}</span>
+                    )}
+                    {s.session_url && (
+                      <a
+                        href={s.session_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
+                        style={{ color: '#0078d4', textDecoration: 'none' }}
+                        title="Open Devin session"
+                      >
+                        <Bot size={10} /> Session <ExternalLink size={9} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* PR links */}
+                  {(s.pull_requests ?? []).length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {(s.pull_requests as { pr_url: string; pr_status: string }[]).map((pr, pi) => {
+                        const st = prStyle(pr.pr_status);
+                        const label = pr.pr_url
+                          .replace(/https?:\/\/[^/]+\//, '')
+                          .replace(/\/pull\//, ' #');
+                        return (
+                          <a
+                            key={pi}
+                            href={pr.pr_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`${pr.pr_status} — ${pr.pr_url}`}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold transition-opacity hover:opacity-75"
+                            style={{ background: st.bg, color: st.color, textDecoration: 'none' }}
+                          >
+                            <GitPullRequest size={9} />
+                            <span className="truncate max-w-[150px]">{label}</span>
+                            <span className="opacity-70 capitalize">{pr.pr_status}</span>
+                            <ExternalLink size={8} />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs" style={{ color: '#c5d4e0' }}>No pull requests</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function DevinStats() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('ai_score');
   const [page, setPage] = useState(1);
+  const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
 
   const { data: stats } = useQuery({ queryKey: ['devin-stats'], queryFn: fetchDevinStats });
   const { data: developers = [] } = useQuery<DevStat[]>({ queryKey: ['devin-developers'], queryFn: fetchDevinDevelopers });
@@ -89,6 +208,10 @@ export default function DevinStats() {
 
   const isEmpty = !stats || stats.total_sessions === 0;
 
+  function toggleExpand(email: string) {
+    setExpandedEmail(prev => prev === email ? null : email);
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: '#f0f4f8' }}>
       <PageHeader
@@ -112,51 +235,12 @@ export default function DevinStats() {
           <>
             {/* KPI Cards */}
             <div className="grid grid-cols-2 xl:grid-cols-6 gap-4">
-              <KpiCard
-                label="Total Sessions"
-                value={String(stats?.total_sessions ?? 0)}
-                icon={<Activity size={17} />}
-                iconBg="#eff6ff"
-                iconColor="#0078d4"
-              />
-              <KpiCard
-                label="Active Developers"
-                value={String(stats?.active_developers ?? 0)}
-                icon={<Users size={17} />}
-                iconBg="#f0fdf4"
-                iconColor="#16a34a"
-              />
-              <KpiCard
-                label="Total ACU"
-                value={String(fmt2(stats?.total_acu ?? 0))}
-                icon={<Cpu size={17} />}
-                iconBg="#fff7ed"
-                iconColor="#ea580c"
-                sub="compute units"
-              />
-              <KpiCard
-                label="Pull Requests"
-                value={String(stats?.total_prs ?? 0)}
-                icon={<GitPullRequest size={17} />}
-                iconBg="#fdf4ff"
-                iconColor="#9333ea"
-              />
-              <KpiCard
-                label="Successful Delivery"
-                value={String(stats?.merged_prs ?? 0)}
-                icon={<CheckCircle size={17} />}
-                iconBg="#f0fdf4"
-                iconColor="#10b981"
-                sub="merged PRs"
-              />
-              <KpiCard
-                label="AI Delivery Rate"
-                value={`${stats?.ai_delivery_rate ?? 0}%`}
-                icon={<TrendingUp size={17} />}
-                iconBg="#fffbeb"
-                iconColor="#d97706"
-                sub="merged / total PRs"
-              />
+              <KpiCard label="Total Sessions" value={String(stats?.total_sessions ?? 0)} icon={<Activity size={17} />} iconBg="#eff6ff" iconColor="#0078d4" />
+              <KpiCard label="Active Developers" value={String(stats?.active_developers ?? 0)} icon={<Users size={17} />} iconBg="#f0fdf4" iconColor="#16a34a" />
+              <KpiCard label="Total ACU" value={String(fmt2(stats?.total_acu ?? 0))} icon={<Cpu size={17} />} iconBg="#fff7ed" iconColor="#ea580c" sub="compute units" />
+              <KpiCard label="Pull Requests" value={String(stats?.total_prs ?? 0)} icon={<GitPullRequest size={17} />} iconBg="#fdf4ff" iconColor="#9333ea" />
+              <KpiCard label="Successful Delivery" value={String(stats?.merged_prs ?? 0)} icon={<CheckCircle size={17} />} iconBg="#f0fdf4" iconColor="#10b981" sub="merged PRs" />
+              <KpiCard label="AI Delivery Rate" value={`${stats?.ai_delivery_rate ?? 0}%`} icon={<TrendingUp size={17} />} iconBg="#fffbeb" iconColor="#d97706" sub="merged / total PRs" />
             </div>
 
             {/* Charts Row 1 */}
@@ -345,52 +429,69 @@ export default function DevinStats() {
                           const successRate = dev.total_prs > 0 ? Math.round((dev.merged_prs / dev.total_prs) * 100) : 0;
                           const initials = dev.user_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() ||
                             dev.user_email.slice(0, 2).toUpperCase();
+                          const isExpanded = expandedEmail === dev.user_email;
                           return (
-                            <tr key={dev.user_email} className="border-b transition-colors" style={{ borderColor: '#f0f4f8' }}
-                              onMouseEnter={e => (e.currentTarget.style.background = '#f7fafd')}
-                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                              <td className="px-4 py-3">
-                                <div
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
-                                  style={medal ? { background: medal.bg, color: medal.color } : { background: '#f0f4f8', color: '#8ba3be' }}
-                                >
-                                  {rank}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2.5">
-                                  <div
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                    style={{ background: CHART_COLORS[(rank - 1) % CHART_COLORS.length] }}
-                                  >
-                                    {initials}
+                            <>
+                              <tr
+                                key={dev.user_email}
+                                className="border-b transition-colors cursor-pointer"
+                                style={{ borderColor: '#f0f4f8', background: isExpanded ? '#f0f6ff' : 'transparent' }}
+                                onClick={() => toggleExpand(dev.user_email)}
+                                onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLTableRowElement).style.background = '#f7fafd'; }}
+                                onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}
+                              >
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <div
+                                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                                      style={medal ? { background: medal.bg, color: medal.color } : { background: '#f0f4f8', color: '#8ba3be' }}
+                                    >
+                                      {rank}
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="text-sm font-semibold truncate max-w-[140px]" title={dev.user_name || dev.user_email} style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
-                                    <p className="text-xs truncate max-w-[140px]" title={dev.user_email} style={{ color: '#8ba3be' }}>{dev.user_email}</p>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <div
+                                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                      style={{ background: CHART_COLORS[(rank - 1) % CHART_COLORS.length] }}
+                                    >
+                                      {initials}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-semibold truncate max-w-[140px]" title={dev.user_name || dev.user_email} style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
+                                      <p className="text-xs truncate max-w-[140px]" title={dev.user_email} style={{ color: '#8ba3be' }}>{dev.user_email}</p>
+                                    </div>
                                   </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-xs font-medium px-2 py-0.5 rounded-lg truncate max-w-[120px] inline-block" title={dev.team_name} style={{ background: '#f0f4f8', color: '#4a6480' }}>
-                                  {dev.team_name}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right font-semibold" style={{ color: '#0d1f30' }}>{dev.sessions}</td>
-                              <td className="px-4 py-3 text-right font-semibold" style={{ color: '#4a6480' }}>{fmt2(dev.acu_used)}</td>
-                              <td className="px-4 py-3 text-right font-semibold" style={{ color: '#4a6480' }}>{dev.total_prs}</td>
-                              <td className="px-4 py-3 text-right">
-                                <Badge variant="green">{dev.merged_prs}</Badge>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="text-xs font-bold" style={{ color: successRate >= 80 ? '#059669' : successRate >= 50 ? '#d97706' : '#dc2626' }}>
-                                  {successRate}%
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="text-sm font-bold" style={{ color: '#0078d4' }}>{dev.ai_score}</span>
-                              </td>
-                            </tr>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-xs font-medium px-2 py-0.5 rounded-lg truncate max-w-[120px] inline-block" title={dev.team_name} style={{ background: '#f0f4f8', color: '#4a6480' }}>
+                                    {dev.team_name}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right font-semibold" style={{ color: '#0d1f30' }}>{dev.sessions}</td>
+                                <td className="px-4 py-3 text-right font-semibold" style={{ color: '#4a6480' }}>{fmt2(dev.acu_used)}</td>
+                                <td className="px-4 py-3 text-right font-semibold" style={{ color: '#4a6480' }}>{dev.total_prs}</td>
+                                <td className="px-4 py-3 text-right">
+                                  <Badge variant="green">{dev.merged_prs}</Badge>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <span className="text-xs font-bold" style={{ color: successRate >= 80 ? '#059669' : successRate >= 50 ? '#d97706' : '#dc2626' }}>
+                                    {successRate}%
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <span className="text-sm font-bold" style={{ color: '#0078d4' }}>{dev.ai_score}</span>
+                                    {isExpanded
+                                      ? <ChevronDown size={13} style={{ color: '#0078d4' }} />
+                                      : <ChevronRight size={13} style={{ color: '#c5d4e0' }} />
+                                    }
+                                  </div>
+                                </td>
+                              </tr>
+                              {isExpanded && <DevSessionDrawer email={dev.user_email} />}
+                            </>
                           );
                         })}
                       </tbody>

@@ -34,6 +34,7 @@ router.get('/developer/:name', (req, res) => {
         merged_prs: s.pull_requests.filter(p => p.pr_status === 'merged').length,
         category: s.category,
         session_url: s.session_url,
+        pull_requests: s.pull_requests.map(pr => ({ pr_url: pr.pr_url, pr_status: pr.pr_status })),
     }));
     const catMap = new Map();
     for (const s of devSessions) {

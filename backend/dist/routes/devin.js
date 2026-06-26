@@ -90,6 +90,26 @@ router.get('/stats', (_req, res) => {
         ai_delivery_rate: total_prs > 0 ? Math.round((merged_prs / total_prs) * 100) : 0,
     });
 });
+// GET /api/devin/developer/:email/sessions — sessions + PR links for a developer
+router.get('/developer/:email/sessions', (req, res) => {
+    const email = decodeURIComponent(req.params.email).toLowerCase();
+    const devSessions = db_1.store.devin_sessions
+        .filter(s => s.user_email.toLowerCase() === email)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .map(s => ({
+        id: s.id,
+        session_name: s.session_name,
+        date: s.created_at.slice(0, 10),
+        acu_used: s.acu_used,
+        category: s.category,
+        session_url: s.session_url,
+        pull_requests: s.pull_requests.map(pr => ({
+            pr_url: pr.pr_url,
+            pr_status: pr.pr_status,
+        })),
+    }));
+    res.json(devSessions);
+});
 // GET /api/devin/sessions
 router.get('/sessions', (_req, res) => {
     try {
