@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { store, DevinSession, DevinDeveloperStat, DevinTeamStat } from '../db';
+import { recalculateFromDevin } from '../analyticsEngine';
 
 let _idSeq = 1;
 function newId() { return `devin-${Date.now()}-${_idSeq++}`; }
@@ -161,6 +162,7 @@ router.post('/upload', (req, res) => {
 
   store.devin_sessions.push(...imported);
   recomputeDevinStats();
+  recalculateFromDevin();
 
   res.json({ imported: imported.length, total_sessions: store.devin_sessions.length });
 });

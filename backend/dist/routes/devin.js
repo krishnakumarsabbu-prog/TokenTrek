@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const db_1 = require("../db");
+const analyticsEngine_1 = require("../analyticsEngine");
 let _idSeq = 1;
 function newId() { return `devin-${Date.now()}-${_idSeq++}`; }
 const router = (0, express_1.Router)();
@@ -152,6 +153,7 @@ router.post('/upload', (req, res) => {
     }));
     db_1.store.devin_sessions.push(...imported);
     recomputeDevinStats();
+    (0, analyticsEngine_1.recalculateFromDevin)();
     res.json({ imported: imported.length, total_sessions: db_1.store.devin_sessions.length });
 });
 exports.default = router;

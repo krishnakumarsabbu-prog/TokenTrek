@@ -48,7 +48,10 @@ router.get('/replay', (_req, res) => {
 router.get('/reports', (_req, res) => {
     const daily_stats = db_1.store.daily_stats || [];
     const developers = db_1.store.developers || [];
-    if (daily_stats.length === 0 || developers.length === 0) {
+    const devin_sessions = db_1.store.devin_sessions || [];
+    // Show data if we have daily stats OR Devin sessions
+    const hasData = daily_stats.length > 0 || devin_sessions.length > 0;
+    if (!hasData) {
         return res.json({
             summary: {
                 total_cost: 0,
@@ -101,7 +104,7 @@ router.get('/reports', (_req, res) => {
             total_cost: totals.totalCost,
             total_tokens: totals.totalTokens,
             total_requests: totals.totalRequests,
-            active_developers: developers.length,
+            active_developers: developers.length || new Set(devin_sessions.map(s => s.user_email)).size,
             cost_change,
             token_change,
             request_change,

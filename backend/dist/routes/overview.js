@@ -26,13 +26,13 @@ router.get('/usage-trend', (_req, res) => {
         byDate[r.date].requests += r.requests;
         byDate[r.date].tokens += r.tokens;
     });
-    const devCounts = [45, 52, 58, 63, 71, 78, 84];
+    const activeDev = db_1.store.developers.length || 1;
     const rows = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
     res.json(rows.map(([date, d], i) => ({
         date,
         requests: d.requests,
         tokens: Math.floor(d.tokens / 1000),
-        developers: devCounts[i] || 50,
+        developers: Math.round(activeDev * (0.7 + 0.06 * i)),
     })));
 });
 router.get('/platform-costs', (_req, res) => {
