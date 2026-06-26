@@ -4,7 +4,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Bot, Users, Cpu, GitPullRequest, CheckCircle, TrendingUp, Activity, Search } from 'lucide-react';
+import { Bot, Users, Cpu, GitPullRequest, CircleCheck as CheckCircle, TrendingUp, Activity, Search } from 'lucide-react';
 import { fetchDevinStats, fetchDevinDevelopers, fetchDevinTrends, fetchDevinCategories } from '../api/devin';
 import { SectionCard, PageHeader, KpiCard, EmptyState, Badge, SearchBar, Select, Pagination } from '../components/ui';
 
@@ -366,13 +366,13 @@ export default function DevinStats() {
                                     {initials}
                                   </div>
                                   <div>
-                                    <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
-                                    <p className="text-xs" style={{ color: '#8ba3be' }}>{dev.user_email}</p>
+                                    <p className="text-sm font-semibold truncate max-w-[140px]" title={dev.user_name || dev.user_email} style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
+                                    <p className="text-xs truncate max-w-[140px]" title={dev.user_email} style={{ color: '#8ba3be' }}>{dev.user_email}</p>
                                   </div>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-xs font-medium px-2 py-0.5 rounded-lg" style={{ background: '#f0f4f8', color: '#4a6480' }}>
+                                <span className="text-xs font-medium px-2 py-0.5 rounded-lg truncate max-w-[120px] inline-block" title={dev.team_name} style={{ background: '#f0f4f8', color: '#4a6480' }}>
                                   {dev.team_name}
                                 </span>
                               </td>

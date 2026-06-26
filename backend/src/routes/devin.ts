@@ -8,6 +8,7 @@ import {
   upsertTeamMetrics,
   insertSessionsBatch,
   getAllSessions,
+  getAllTeams,
   RawSessionInput,
 } from '../sqliteDb';
 
@@ -197,11 +198,14 @@ router.post('/upload', (req, res) => {
     // 4. Persist to SQLite (idempotent — skips existing session_urls)
     const inserted = insertSessionsBatch(toInsert);
 
-    // 5. Reload all sessions from DB into in-memory store
+    // 5. Reload all sessions from DB into in-memory store, resolving team names
+    const allDbTeams = getAllTeams();
+    const teamNameById = new Map(allDbTeams.map(t => [t.id, t.team_name]));
     const allDbSessions = getAllSessions();
     store.devin_sessions = allDbSessions.map(s => ({
       id: s.id,
-      team_id: String(s.team_id),
+      // Resolve numeric DB team_id → human-readable team name
+      team_id: teamNameById.get(s.team_id) ?? s.org_name ?? 'Unknown',
       user_name: s.user_name,
       user_email: s.user_email,
       session_name: s.session_name,

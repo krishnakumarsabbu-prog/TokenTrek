@@ -683,8 +683,8 @@ export default function AILeague() {
                               {initials}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
-                              <p className="text-xs" style={{ color: '#8ba3be' }}>{dev.team_name}</p>
+                              <p className="text-sm font-semibold truncate max-w-[150px]" title={dev.user_name || dev.user_email} style={{ color: '#0d1f30' }}>{dev.user_name || dev.user_email}</p>
+                              <p className="text-xs truncate max-w-[150px]" title={dev.team_name} style={{ color: '#8ba3be' }}>{dev.team_name}</p>
                             </div>
                           </div>
                         </td>

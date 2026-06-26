@@ -332,14 +332,21 @@ import { recalculateFromDevin } from './analyticsEngine';
 /**
  * Load all persisted Devin sessions from SQLite into the in-memory store,
  * then recalculate all analytics. Called on startup.
+ * team_id in the store is the TEAM NAME (string), not the numeric DB id.
  */
 export function loadDevinFromDb(): void {
+  const db = getDb();
   const sessions = getAllSessions();
   if (sessions.length === 0) return;
 
+  // Build id→name lookup for teams
+  const teamRows = db.prepare('SELECT id, team_name FROM teams').all() as { id: number; team_name: string }[];
+  const teamNameById = new Map(teamRows.map(t => [t.id, t.team_name]));
+
   store.devin_sessions = sessions.map(s => ({
     id: s.id,
-    team_id: String(s.team_id),
+    // Resolve numeric DB team_id to the human-readable team name
+    team_id: teamNameById.get(s.team_id) ?? s.org_name ?? 'Unknown',
     user_name: s.user_name,
     user_email: s.user_email,
     session_name: s.session_name,

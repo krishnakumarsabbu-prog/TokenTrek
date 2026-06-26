@@ -222,7 +222,7 @@ export default function Developers() {
                                 <div className="flex items-center gap-2.5">
                                   <Avatar initials={d.avatar} size={32} index={rank - 1} />
                                   <div>
-                                    <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{d.name}</p>
+                                    <p className="text-sm font-semibold truncate max-w-[160px]" title={d.name} style={{ color: '#0d1f30' }}>{d.name}</p>
                                     <p className="text-xs" style={{ color: '#8ba3be' }}>{d.tasksCompleted} prompts created</p>
                                   </div>
                                 </div>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CheckCircle2, Target, ChevronUp, ChevronDown, Search, Bot, GitPullRequest } from 'lucide-react';
+import { Zap, Trophy, Star, TrendingUp, Clock, DollarSign, CircleCheck as CheckCircle2, Target, ChevronUp, ChevronDown, Search, Bot, GitPullRequest } from 'lucide-react';
 import { fetchDeveloperXP } from '../api/analytics';
 import { fetchDevinDevelopers } from '../api/devin';
 import { Avatar, PageHeader, SectionCard, LoadingOverlay, SearchBar, Select, Pagination } from '../components/ui';
@@ -321,9 +321,9 @@ function LeaderRow({ dev, rank, onClick }: { dev: DevXP; rank: number; onClick: 
               {cfg.icon}
             </span>
           </div>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: '#0d1f30' }}>{dev.developer}</p>
-            <p className="text-xs" style={{ color: '#8ba3be' }}>{dev.team}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate max-w-[160px]" title={dev.developer} style={{ color: '#0d1f30' }}>{dev.developer}</p>
+            <p className="text-xs truncate max-w-[160px]" title={dev.team} style={{ color: '#8ba3be' }}>{dev.team}</p>
           </div>
         </div>
       </td>
